@@ -112,15 +112,13 @@
         .section-header { font-size: 1.1rem; font-weight: 800; color: #ffffff; margin-bottom: 16px; margin-top: 24px; letter-spacing: 0.05em; display: flex; align-items: center; gap: 10px; }
         .section-header::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.1); }
 
-        .form-group { margin-bottom: 24px; width: 100%; display: flex; flex-direction: column; height: 100%; }
+        .form-group { margin-bottom: 24px; width: 100%; display: flex; flex-direction: column; }
         
         /* Tighter spacing between label/hint and the input bar */
-        .form-label { display: block; margin-bottom: 6px; color: #ffffff; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.3; width: 100%; }
-        .form-hint { display: block; margin-top: 2px; margin-bottom: 6px; color: var(--text-muted); font-size: 0.8rem; line-height: 1.4; text-transform: none; font-weight: 500; letter-spacing: 0; }
+        .form-label { display: block; margin-bottom: 8px; color: #ffffff; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.3; width: 100%; }
+        .form-hint { display: block; margin-top: 2px; margin-bottom: 10px; color: var(--text-muted); font-size: 0.8rem; line-height: 1.4; text-transform: none; font-weight: 500; letter-spacing: 0; }
 
         .required-mark { color: #FF3B30; margin-left: 4px; font-weight: bold; }
-
-        .form-group > .control-item, .form-group > .custom-checkbox { margin-top: auto; }
 
         /* Pro Edition Inputs */
         input.control-item, select.control-item, textarea.control-item { 
@@ -186,9 +184,9 @@
         
         .autofill-indicator { font-size: 0.8rem; color: #34C759; margin-top: 8px; display: none; font-weight: bold; background: rgba(52, 199, 89, 0.1); padding: 8px 12px; border-radius: 8px; display: inline-block; }
 
-        .dynamic-form-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+        .dynamic-form-grid { display: grid; grid-template-columns: 1fr; gap: 32px; }
         @media (min-width: 600px) {
-            .dynamic-form-grid { grid-template-columns: 1fr 1fr; gap: 32px 20px; }
+            .dynamic-form-grid { grid-template-columns: 1fr 1fr; gap: 40px 24px; }
             .full-width { grid-column: 1 / -1; }
             .half-width { grid-column: span 1; }
             .dynamic-form-grid .form-group { margin-bottom: 0; } 
