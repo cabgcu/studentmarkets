@@ -8,6 +8,8 @@
     <!-- Dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Powerful Image Compression Library -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js"></script>
 
     <style>
         :root {
@@ -112,7 +114,13 @@
         .section-header { font-size: 1.1rem; font-weight: 800; color: #ffffff; margin-bottom: 16px; margin-top: 24px; letter-spacing: 0.05em; display: flex; align-items: center; gap: 10px; }
         .section-header::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.1); }
 
-        .form-group { margin-bottom: 24px; width: 100%; display: flex; flex-direction: column; }
+        .form-group { margin-bottom: 24px; width: 100%; display: flex; flex-direction: column; height: 100%; }
+        
+        /* Forces inputs to align at the bottom of the grid row regardless of label height */
+        .form-group > .control-item, 
+        .form-group > .custom-checkbox { 
+            margin-top: auto; 
+        }
         
         /* Tighter spacing between label/hint and the input bar */
         .form-label { display: block; margin-bottom: 8px; color: #ffffff; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.3; width: 100%; }
@@ -165,6 +173,7 @@
         .btn-primary { background: var(--gradient-accent); color: white; box-shadow: 0 4px 15px rgba(10, 132, 255, 0.2); }
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(10, 132, 255, 0.4); }
         .btn-primary:active { transform: translateY(0); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; min-width: auto; }
         .btn-ghost:hover { background: rgba(255,255,255,0.1); }
 
@@ -1192,8 +1201,10 @@
         if(!validateForm(currentTab)) return;
         const selectedIds = Array.from(document.querySelectorAll('input[name="marketChoice"]:checked')).map(cb => cb.value);
         const btn = document.getElementById('submitBtn');
-        const basePayload = { status: 'Pending', email_sent: 'No', first_name: '', last_name: '' };
+        const submitBtnText = document.getElementById('submitBtnText');
+        const submitLoader = document.getElementById('submitLoader');
         
+        const basePayload = { status: 'Pending', email_sent: 'No', first_name: '', last_name: '' };
         let agreements = []; // Track all checked agreements
 
         for(let q of formConfig.questions) {
@@ -1223,18 +1234,30 @@
         // Save the tracked array as a clean JSON string to the database
         basePayload.agreements_checked = JSON.stringify(agreements);
 
-        if (basePayload.food_license==='Yes') {
-             const file = document.getElementById('formFoodLicenseFile').files[0];
-             const existing = document.getElementById('formFoodLicenseLinkHidden').value;
-             if(file) {
-                 const path = `license_${Date.now()}.jpg`;
-                 await _supabase.storage.from('licenses').upload(path, await compressImage(file));
-                 basePayload.food_license_link = _supabase.storage.from('licenses').getPublicUrl(path).data.publicUrl;
-             } else basePayload.food_license_link = existing;
-        }
-        basePayload.additional_comments = document.getElementById('form_additional_comments')?.value.trim() || '';
         btn.disabled = true;
+        submitBtnText.innerText = "Processing...";
+        submitLoader.style.display = "inline-block";
+
         try {
+            if (basePayload.food_license==='Yes') {
+                 const file = document.getElementById('formFoodLicenseFile').files[0];
+                 const existing = document.getElementById('formFoodLicenseLinkHidden').value;
+                 if(file) {
+                     submitBtnText.innerText = "Compressing Image...";
+                     const compressedFile = await compressImage(file);
+                     
+                     submitBtnText.innerText = "Uploading License...";
+                     const path = `license_${Date.now()}.jpg`;
+                     await _supabase.storage.from('licenses').upload(path, compressedFile);
+                     basePayload.food_license_link = _supabase.storage.from('licenses').getPublicUrl(path).data.publicUrl;
+                 } else {
+                     basePayload.food_license_link = existing;
+                 }
+            }
+
+            submitBtnText.innerText = "Saving Application...";
+            basePayload.additional_comments = document.getElementById('form_additional_comments')?.value.trim() || '';
+            
             const inserts = selectedIds.map(id => ({ ...basePayload, event_id: id }));
             const { error } = await _supabase.from('vendors').insert(inserts);
             if(error) throw error;
@@ -1244,29 +1267,40 @@
 
             switchView('success');
             if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#0A84FF', '#BF5AF2', '#ffffff'] });
-        } catch(e) { showToast("Submission failed", true); }
-        finally { btn.disabled = false; }
+        } catch(e) { 
+            console.error(e);
+            showToast("Submission failed", true); 
+        } finally { 
+            btn.disabled = false; 
+            submitBtnText.innerText = "Submit Application";
+            submitLoader.style.display = "none";
+        }
     }
 
     function toggleFoodLicense() { let s = document.getElementById('foodLicenseUploadSection'); if(s) s.style.display = document.getElementById('form_food_license').value==='Yes'?'block':'none'; }
     function togglePowerAgreement() { let s = document.getElementById('powerAgreementSection'); if(s) s.style.display = document.getElementById('form_needs_power').value==='Yes'?'block':'none'; }
     function switchView(v) { document.querySelectorAll('.view').forEach(e => e.classList.remove('active')); document.getElementById(v + 'View').classList.add('active'); window.scrollTo(0,0); }
     function showToast(m, e) { const t = document.getElementById('toast'); t.innerText = m; t.style.background = e ? 'var(--gradient-fire)' : 'var(--gradient-success)'; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 4000); }
+    
+    // Upgraded Compression function using browser-image-compression library
     async function compressImage(file) {
-        return new Promise(res => {
-            const reader = new FileReader(); reader.readAsDataURL(file);
-            reader.onload = e => {
-                const img = new Image(); img.src = e.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    let w = img.width, h = img.height;
-                    if(w > 1000) { h = Math.round((h * 1000) / w); w = 1000; }
-                    canvas.width = w; canvas.height = h;
-                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    canvas.toBlob(blob => res(new File([blob], file.name, { type: 'image/jpeg' })), 'image/jpeg', 0.6);
-                };
-            };
-        });
+        const options = {
+            maxSizeMB: 0.4, // Forces images down to roughly 400KB (perfect for Supabase 50MB limit)
+            maxWidthOrHeight: 1200, // Scales down dimensions while keeping it very readable
+            useWebWorker: true,
+            initialQuality: 0.7
+        };
+        
+        try {
+            console.log(`Original image size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+            const compressedFile = await imageCompression(file, options);
+            console.log(`Compressed image size: ${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`);
+            return compressedFile;
+        } catch (error) {
+            console.error("Image compression error:", error);
+            // Fallback to original file if compression fails for some reason
+            return file;
+        }
     }
 </script>
 </body>
