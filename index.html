@@ -971,7 +971,7 @@
                 if (!event) return null;
                 let displayStatus = 'In Review';
                 
-                // Fixed: Check for ANY sent email type instead of just 'Yes'
+                // Track any template that was actually sent instead of just looking for "Yes"
                 if (app.email_sent && app.email_sent !== 'No') {
                     if (app.status === 'Approved' || app.status === 'Checked In') displayStatus = 'Approved';
                     else if (app.status === 'Denied') displayStatus = 'Denied';
@@ -991,7 +991,7 @@
                 if (a.displayStatus === 'Approved') { color = '#34C759'; icon = '✅'; }
                 if (a.displayStatus === 'Denied') { color = '#FF3B30'; icon = '❌'; }
 
-                // Fixed: Ensure the resend button appears for all sent types
+                // The resend button should appear for anyone who has been emailed
                 const canResend = (a.email_sent && a.email_sent !== 'No');
 
                 html += `
@@ -1040,39 +1040,82 @@
             const { data: event } = await _supabase.from('events').select('*').eq('id', eventId).single();
 
             let subj = '', body = '';
-            const isApproved = vendor.status === 'Approved' || vendor.status === 'Checked In';
             
-            if (isApproved) {
-                subj = event.template_approved_subject; body = event.template_approved_body;
-                if (vendor.needs_power === 'Yes') {
-                    subj = event.template_power_subject || subj; body = event.template_power_body || body;
+            // 1. Ensure we parse the exact template type that was sent to the student previously
+            let targetTemplate = vendor.email_sent;
+            const isApproved = vendor.status === 'Approved' || vendor.status === 'Checked In';
+
+            // Fallback inference if the database isn't perfectly clean
+            if (!targetTemplate || targetTemplate === 'Yes' || targetTemplate === 'No') {
+                if (isApproved) {
+                    targetTemplate = vendor.needs_power === 'Yes' ? 'power' : 'approved';
+                } else {
+                    targetTemplate = 'denied';
                 }
-            } else {
+            }
+
+            if (targetTemplate === 'approved') {
+                subj = event.template_approved_subject; body = event.template_approved_body;
+            } else if (targetTemplate === 'power') {
+                subj = event.template_power_subject || event.template_approved_subject; 
+                body = event.template_power_body || event.template_approved_body;
+            } else if (targetTemplate === 'power_denied') {
+                subj = event.template_power_denied_subject || event.template_approved_subject; 
+                body = event.template_power_denied_body || event.template_approved_body;
+            } else if (targetTemplate === 'denied') {
                 subj = event.template_denied_subject; body = event.template_denied_body;
             }
+
+            // 2. Inject confirmation button if approval email and not yet present
+            if (['approved', 'power', 'power_denied'].includes(targetTemplate)) {
+                if (body && !body.includes('{{CONFIRM_LINK}}')) {
+                    body += "\n\n**Please click the link below to confirm your attendance by {{CONFIRM_DEADLINE}}:**\n{{CONFIRM_LINK}}";
+                }
+            }
+
+            // 3. Setup dynamic tracking link
+            let baseUrl = window.location.href.split('?')[0].split('#')[0];
+            if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
+            if (baseUrl && !baseUrl.startsWith('http')) baseUrl = 'https://' + baseUrl;
+            const confirmUrl = `${baseUrl}?confirm=${vendor.id}`;
+            const finalConfirmLink = `<a href="${confirmUrl}" style="display:inline-block; padding:12px 24px; background-color:#34C759; color:#ffffff; text-decoration:none; font-weight:bold; border-radius:8px; margin: 10px 0;">Confirm My Attendance</a>`;
+
+            const formatDate = (dStr) => dStr ? new Date(dStr + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '';
+            const formatDateTime = (dtStr) => dtStr ? new Date(dtStr).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) + ' at ' + new Date(dtStr).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
+
+            // 4. Inject all dynamic variables into templates
+            let rawBody = (body || '').replace(/\{\{FIRST\}\}/g, vendor.first_name)
+                              .replace(/\{\{MARKET_NAME\}\}/g, event.name)
+                              .replace(/\{\{LOCATION\}\}/g, event.location)
+                              .replace(/\{\{MARKET_DATE\}\}/g, formatDate(event.market_date))
+                              .replace(/\{\{MARKET_TIME\}\}/g, event.market_time || 'TBD')
+                              .replace(/\{\{APP_OPENS\}\}/g, formatDateTime(event.app_open))
+                              .replace(/\{\{APP_CLOSES\}\}/g, formatDateTime(event.app_close))
+                              .replace(/\{\{CONTACT_DATE\}\}/g, formatDate(event.contact_date))
+                              .replace(/\{\{CONFIRM_DEADLINE\}\}/g, formatDate(event.confirm_date))
+                              .replace(/\{\{CONFIRM_LINK\}\}/g, finalConfirmLink)
+                              .replace(/\{\{EVENT\}\}/g, event.name);
+
+            const htmlBodyText = rawBody.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+            const parsedSubj = (subj || '').replace(/\{\{FIRST\}\}/g, vendor.first_name).replace(/\{\{MARKET_NAME\}\}/g, event.name).replace(/\{\{EVENT\}\}/g, event.name);
 
             const bannerUrl = processImageUrl(event.banner_url || "");
             const headingText = event.heading_text || "Market Status Update";
             const statusColor = isApproved ? '#34C759' : '#FF3B30';
             const statusBadgeText = isApproved ? 'APPROVED' : 'STATUS UPDATE';
 
-            const htmlBodyText = body.replace(/\{\{FIRST\}\}/g, vendor.first_name)
-                                     .replace(/\{\{EVENT\}\}/g, event.name)
-                                     .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-                                     .replace(/\n/g, '<br>');
-
-            const parsedSubj = subj.replace(/\{\{FIRST\}\}/g, vendor.first_name).replace(/\{\{EVENT\}\}/g, event.name);
-
+            // 5. Fixed QR Data payload matching Hardware scanners directly
+            const barcodeData = vendor.student_id || vendor.id.substring(0,8);
             const qrHtml = isApproved ? `
                 <tr><td style="padding: 0 15px; background-color: #ffffff;"><div style="border-top: 2px dashed #e5e7eb; width: 100%; height: 1px;"></div></td></tr>
                 <tr><td align="center" style="padding: 40px 30px; background-color: #ffffff;">
                     <table border="0" cellspacing="0" cellpadding="0" width="100%">
                         <tr><td align="center" style="background: #ffffff; padding: 25px; border-radius: 16px; border: 2px solid #eeeeee;">
-                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${vendor.id}&format=png&bgcolor=FFFFFF&color=000000&margin=10" alt="Ticket" width="250" style="display: block; margin: 0 auto; max-width: 100%; border: 0;">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${barcodeData}&format=png&bgcolor=FFFFFF&color=000000&margin=10" alt="Ticket QR Code" width="250" style="display: block; margin: 0 auto; max-width: 100%; border: 0;">
                         </td></tr>
                     </table>
                     <p style="margin: 25px 0 0 0; font-size: 14px; color: #1a1a1a; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; font-family: sans-serif;">SCAN AT CHECK-IN</p>
-                    <p style="margin: 8px 0 0 0; font-size: 12px; color: #888888; font-family: monospace;">ID: #${vendor.id.substring(0,8).toUpperCase()}</p>
+                    <p style="margin: 8px 0 0 0; font-size: 12px; color: #888888; font-family: monospace;">ID: #${String(barcodeData).toUpperCase()}</p>
                 </td></tr>` : '';
 
             const fullHtmlContent = `
