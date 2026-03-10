@@ -156,6 +156,15 @@
             background: rgba(255,255,255,0.08);
         }
 
+        /* Autofill Privacy Masking Styles */
+        .autofilled-masked {
+            color: #34C759 !important;
+            font-style: italic;
+            font-weight: 800 !important;
+            background: rgba(52, 199, 89, 0.05) !important;
+            border-color: rgba(52, 199, 89, 0.3) !important;
+        }
+
         input[type="file"].control-item { padding: 12px 18px; cursor: pointer; font-weight: 500; }
         input[type="file"]::file-selector-button {
             border: none; background: rgba(255, 255, 255, 0.15); padding: 8px 16px;
@@ -525,6 +534,33 @@
         }
     });
 
+    // --- AUTOFILL PRIVACY LISTENERS ---
+    document.addEventListener('focusin', (e) => {
+        if (e.target.classList && e.target.classList.contains('autofilled-masked') && e.target.value === 'Information on File') {
+            // When a masked field is clicked, clear it so they can enter new text
+            e.target.value = '';
+            e.target.classList.remove('autofilled-masked');
+            if (e.target.dataset.originalType) {
+                e.target.type = e.target.dataset.originalType;
+            }
+        }
+    });
+
+    document.addEventListener('focusout', (e) => {
+        if (e.target.dataset && e.target.dataset.wasMasked === 'true') {
+            if (e.target.value.trim() === '') {
+                // If they left it blank, restore the masked placeholder
+                e.target.type = 'text';
+                e.target.value = 'Information on File';
+                e.target.classList.add('autofilled-masked');
+            } else if (e.target.value.trim() !== 'Information on File') {
+                // User typed fresh data, clear out the masked PII history so their new entry saves
+                delete e.target.dataset.autofilled;
+                delete e.target.dataset.wasMasked;
+            }
+        }
+    });
+
     async function handleVendorConfirmation(id) {
         try {
             // Guarantee the form UI is entirely hidden if a student lands on this link
@@ -768,11 +804,11 @@
         
         if (availLabel) {
             if (checkboxes.length === 0) {
-                availLabel.innerText = 'WILL YOU BE AVAILABLE FOR THE DURATION OF THE MARKET?';
+                availLabel.innerHTML = 'WILL YOU BE AVAILABLE FOR THE DURATION OF THE MARKET?<span class="required-mark">*</span>';
             } else if (checkboxes.length === 1) {
-                availLabel.innerText = 'WILL YOU BE AVAILABLE FOR THE FULL DURATION OF THE SELECTED MARKET?';
+                availLabel.innerHTML = 'WILL YOU BE AVAILABLE FOR THE FULL DURATION OF THE SELECTED MARKET?<span class="required-mark">*</span>';
             } else {
-                availLabel.innerText = 'WILL YOU BE AVAILABLE FOR THE FULL DURATION OF ALL SELECTED MARKETS?';
+                availLabel.innerHTML = 'WILL YOU BE AVAILABLE FOR THE FULL DURATION OF ALL SELECTED MARKETS?<span class="required-mark">*</span>';
             }
         }
     }
@@ -955,10 +991,41 @@
             if (idMatch) {
                 let fieldId = idMatch[1];
                 let q = formConfig.questions.find(q => q.id === fieldId);
+                
+                let val = input.value.trim();
+                
+                // Unmask "Information on File" placeholder to check the real data
+                if (input.dataset && input.dataset.autofilled && val === 'Information on File') {
+                    val = input.dataset.autofilled;
+                }
+
                 if (q && q.required) {
+                    let labelEl = document.getElementById('lbl-form_' + q.id);
+                    let displayLabel = labelEl ? labelEl.innerText.replace('*', '').split('\n')[0].trim() : q.label;
+
                     if (q.type === 'checkbox_single') {
-                        if (!input.checked) { showToast(`Please agree to: ${q.label}`, true); return false; }
-                    } else if (input.value.trim() === "") { showToast(`Please answer: ${q.label}`, true); input.focus(); return false; }
+                        if (!input.checked) { showToast(`Please agree to: ${displayLabel}`, true); return false; }
+                    } else if (val === "") { 
+                        showToast(`Please answer: ${displayLabel}`, true); input.focus(); return false; 
+                    }
+                }
+                
+                // Strict Email Validations
+                if (q && q.type === 'email' && val !== "") {
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(val)) {
+                        showToast(`Please enter a valid email format.`, true); 
+                        input.focus(); 
+                        return false;
+                    }
+                    
+                    if (q.id === 'gcu_email') {
+                        if (!val.toLowerCase().endsWith('@my.gcu.edu')) {
+                            showToast(`GCU Email must end with @my.gcu.edu`, true);
+                            input.focus();
+                            return false;
+                        }
+                    }
                 }
             }
             if (input.id === 'formFoodLicenseFile') {
@@ -1293,8 +1360,23 @@
                 formConfig.questions.forEach(q => { 
                     const el = document.getElementById('form_'+q.id); 
                     if(el && q.id !== 'additional_comments' && q.id !== 'student_id') {
-                        if (q.id === 'full_name_combined') el.value = (v.first_name + ' ' + v.last_name).trim();
-                        else if (v[q.id]) el.value = v[q.id];
+                        let actualVal = '';
+                        if (q.id === 'full_name_combined') actualVal = (v.first_name + ' ' + v.last_name).trim();
+                        else if (v[q.id]) actualVal = v[q.id];
+
+                        if (actualVal) {
+                            // Mask the PII fields securely
+                            if (['full_name_combined', 'preferred_email', 'gcu_email', 'phone'].includes(q.id)) {
+                                el.dataset.autofilled = actualVal; // hidden real data
+                                el.dataset.originalType = el.type || 'text'; // save native type
+                                el.type = 'text'; // change type so textual mask is valid in DOM
+                                el.value = 'Information on File';
+                                el.classList.add('autofilled-masked');
+                                el.dataset.wasMasked = 'true';
+                            } else {
+                                el.value = actualVal;
+                            }
+                        }
                     }
                 });
                 if (v.food_license_link) {
@@ -1323,7 +1405,14 @@
             if(q.type==='section_header') continue;
             const el = document.getElementById('form_'+q.id);
             if(!el) continue;
-            const val = q.type==='checkbox_single' ? (el.checked?'Yes':'No') : el.value.trim();
+            
+            let val = q.type==='checkbox_single' ? (el.checked?'Yes':'No') : el.value.trim();
+
+            // Check if this was a masked field that they DID NOT change, restoring the real data
+            if (el.dataset && el.dataset.autofilled && val === 'Information on File') {
+                val = el.dataset.autofilled;
+            }
+
             if(q.id === 'full_name_combined') {
                 const parts = val.split(' ');
                 basePayload.first_name = parts[0] || val;
