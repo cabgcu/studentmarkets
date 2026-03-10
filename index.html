@@ -1020,8 +1020,9 @@
                     }
                     
                     if (q.id === 'gcu_email') {
-                        if (!val.toLowerCase().endsWith('@my.gcu.edu')) {
-                            showToast(`GCU Email must end with @my.gcu.edu`, true);
+                        const lowerVal = val.toLowerCase();
+                        if (!lowerVal.endsWith('@my.gcu.edu') && !lowerVal.endsWith('@gcu.edu')) {
+                            showToast(`GCU Email must end with @my.gcu.edu or @gcu.edu`, true);
                             input.focus();
                             return false;
                         }
