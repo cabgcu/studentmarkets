@@ -424,6 +424,14 @@
                     <fieldset class="form-group full-width" style="margin-bottom:15px; border:none; padding:0; margin:0;">
                         <legend class="form-label" id="lbl-market-selection" style="width:100%;">Which Market are you applying for?<span class="required-mark">*</span></legend>
                         <div id="marketSelectionContainer"></div>
+
+                        <!-- Dynamic Late Application Strike Warning Container -->
+                        <div id="lateAgreementContainer" style="display:none; background: rgba(255, 59, 48, 0.05); border: 1px solid rgba(255, 59, 48, 0.3); padding: 18px; border-radius: 16px; margin-top: 20px; animation: fadeUp 0.3s ease;">
+                            <label class="custom-checkbox" style="border-color: rgba(255, 59, 48, 0.4); background: rgba(0,0,0,0.5); margin-bottom: 0;">
+                                <input type="checkbox" id="lateAgreementCheck">
+                                <span style="color: #FF3B30; font-weight: 700; font-size: 0.85rem;">I acknowledge that I am applying PAST the official deadline. I understand that submitting this application counts as a Late Strike, and accumulating 3 strikes will result in a ban from future markets.</span>
+                            </label>
+                        </div>
                     </fieldset>
                 </div>
 
@@ -561,7 +569,24 @@
         }
     });
 
-    async function handleVendorConfirmation(id) {
+    // Helper to safely parse and append to the internal timeline
+    function getParsedNotes(noteStr) {
+        if (!noteStr || noteStr.trim() === '') return [];
+        try {
+            const parsed = JSON.parse(noteStr);
+            if (Array.isArray(parsed)) return parsed;
+        } catch (e) {}
+        
+        return [{
+            id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2, 9),
+            date: new Date().toISOString(),
+            text: noteStr,
+            author: 'Legacy Data',
+            type: 'legacy'
+        }];
+    }
+
+    async function handleVendorConfirmation(id, action) {
         try {
             // Guarantee the form UI is entirely hidden if a student lands on this link
             const mainApp = document.getElementById('mainAppContainer');
@@ -774,18 +799,22 @@
                     const formattedDate = d.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
                     const formattedClose = e.app_close ? new Date(e.app_close).toLocaleString() : 'TBD';
                     
+                    // Calculate if this market is technically past its deadline but currently forced open
+                    const isLate = e.app_close && new Date(e.app_close) < now;
+                    
                     return `
                     <label class="market-option" id="label_market_${e.id}" for="chk_market_${e.id}">
-                        <input type="checkbox" id="chk_market_${e.id}" name="marketChoice" value="${e.id}" onchange="updateMarketSelectionUI()">
+                        <input type="checkbox" id="chk_market_${e.id}" name="marketChoice" value="${e.id}" data-is-late="${isLate}" onchange="updateMarketSelectionUI()">
                         <div class="market-info-text">
                             <span class="market-name">${e.name}</span>
                             <span class="market-meta">
                                 <strong>Date of Market:</strong> ${formattedDate}<br>
                                 <strong>Time:</strong> ${e.market_time || '6:30-9:30pm'}<br>
                                 <strong>Location:</strong> ${e.location}<br>
-                                <span style="color: #FF3B30; font-size: 0.75rem; display: inline-block; margin-top: 4px;">
-                                    This application will close on ${formattedClose}
+                                <span style="color: ${isLate ? '#FF3B30' : 'var(--text-muted)'}; font-size: 0.75rem; display: inline-block; margin-top: 4px;">
+                                    ${isLate ? '<strong>🚨 PAST DEADLINE</strong>' : `This application closes on ${formattedClose}`}
                                 </span>
+                                ${isLate ? `<span style="color: #FF3B30; font-size: 0.75rem; font-weight: bold; display: block; margin-top: 4px; line-height: 1.3;">Submitting now will result in 1 Late Strike. 3 Strikes = Banned.</span>` : ''}
                             </span>
                         </div>
                     </label>`;
@@ -797,10 +826,22 @@
     function updateMarketSelectionUI() {
         const checkboxes = document.querySelectorAll('input[name="marketChoice"]:checked');
         const availLabel = document.querySelector('[id="lbl-form_availability"]');
+        let hasLate = false;
+
         document.querySelectorAll('input[name="marketChoice"]').forEach(cb => {
             const label = document.getElementById(`label_market_${cb.value}`);
-            cb.checked ? label.classList.add('selected') : label.classList.remove('selected');
+            if (cb.checked) {
+                label.classList.add('selected');
+                if (cb.getAttribute('data-is-late') === 'true') hasLate = true;
+            } else {
+                label.classList.remove('selected');
+            }
         });
+        
+        const lateContainer = document.getElementById('lateAgreementContainer');
+        if (lateContainer) {
+            lateContainer.style.display = hasLate ? 'block' : 'none';
+        }
         
         if (availLabel) {
             if (checkboxes.length === 0) {
@@ -981,6 +1022,14 @@
                 showToast("Please select at least one market to apply to.", true);
                 return false;
             }
+            
+            const lateContainer = document.getElementById('lateAgreementContainer');
+            const lateCheck = document.getElementById('lateAgreementCheck');
+            if (lateContainer && lateContainer.style.display === 'block' && !lateCheck.checked) {
+                showToast("Please acknowledge the Late Strike warning.", true);
+                return false;
+            }
+            
             return true;
         }
         let inputs = x.querySelectorAll('input, select, textarea');
@@ -1206,7 +1255,7 @@
             // 2. Inject confirmation button if approval email and not yet present
             if (['approved', 'power', 'power_denied'].includes(targetTemplate)) {
                 if (body && !body.includes('{{CONFIRM_LINK}}')) {
-                    body += "\n\n**Please click the link below to confirm your attendance by {{CONFIRM_DEADLINE}}:**\n{{CONFIRM_LINK}}";
+                    body += "\n\n**Please click a link below to confirm your status by {{CONFIRM_DEADLINE}}:**\n{{CONFIRM_LINK}}\n{{DECLINE_LINK}}";
                 }
             }
 
@@ -1215,7 +1264,9 @@
             if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
             if (baseUrl && !baseUrl.startsWith('http')) baseUrl = 'https://' + baseUrl;
             const confirmUrl = `${baseUrl}?confirm=${vendor.id}`;
-            const finalConfirmLink = `<a href="${confirmUrl}" style="display:inline-block; padding:12px 24px; background-color:#34C759; color:#ffffff; text-decoration:none; font-weight:bold; border-radius:8px; margin: 10px 0;">Confirm My Attendance</a>`;
+            const declineUrl = `${baseUrl}?decline=${vendor.id}`;
+            const finalConfirmLink = `<a href="${confirmUrl}" style="display:inline-block; padding:12px 24px; background-color:#34C759; color:#ffffff; text-decoration:none; font-weight:bold; border-radius:8px; margin: 10px 5px 10px 0;">✓ Confirm Attendance</a>`;
+            const finalDeclineLink = `<a href="${declineUrl}" style="display:inline-block; padding:12px 24px; background-color:#FF3B30; color:#ffffff; text-decoration:none; font-weight:bold; border-radius:8px; margin: 10px 0;">✕ Can't Make It</a>`;
 
             const formatDate = (dStr) => dStr ? new Date(dStr + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '';
             const formatDateTime = (dtStr) => dtStr ? new Date(dtStr).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) + ' at ' + new Date(dtStr).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
@@ -1231,7 +1282,13 @@
                               .replace(/\{\{CONTACT_DATE\}\}/g, formatDate(event.contact_date))
                               .replace(/\{\{CONFIRM_DEADLINE\}\}/g, formatDate(event.confirm_date))
                               .replace(/\{\{CONFIRM_LINK\}\}/g, finalConfirmLink)
+                              .replace(/\{\{DECLINE_LINK\}\}/g, finalDeclineLink)
                               .replace(/\{\{EVENT\}\}/g, event.name);
+
+            // Create plain text fallback for robust email delivery
+            let plainTextStr = rawBody.replace(/\*\*(.*?)\*\*/g, '$1');
+            plainTextStr = plainTextStr.replace(finalConfirmLink, `\n\nConfirm Attendance Here: ${confirmUrl}\n`);
+            plainTextStr = plainTextStr.replace(finalDeclineLink, `\nDecline/Cancel Spot Here: ${declineUrl}\n`);
 
             const htmlBodyText = rawBody.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
             const parsedSubj = (subj || '').replace(/\{\{FIRST\}\}/g, vendor.first_name).replace(/\{\{MARKET_NAME\}\}/g, event.name).replace(/\{\{EVENT\}\}/g, event.name);
@@ -1285,12 +1342,13 @@
                     sender: { name: 'Canyon Activities Board', email: 'studentmarkets@cabgcu.com' },
                     to: [{ email: vendor.preferred_email, name: `${vendor.first_name} ${vendor.last_name}` }],
                     subject: parsedSubj, 
-                    htmlContent: fullHtmlContent
+                    htmlContent: fullHtmlContent,
+                    textContent: plainTextStr
                 })
             });
 
             if(!response.ok) throw new Error("Email service failed");
-            showToast("✨ Email resent successfully!");
+            showToast("✨ Email resent successfully!", false);
         } catch(e) { console.error(e); showToast("Resend failed", true); }
         finally { btn.innerHTML = origHtml; btn.disabled = false; }
     }
@@ -1344,7 +1402,7 @@
         formConfig.eventDesc = document.getElementById('adminEventDesc').value;
         try { 
             await _supabase.from('secrets').upsert([{ name: 'MARKET_FORM_CONFIG_V8', value: JSON.stringify(formConfig) }], { onConflict: 'name' }); 
-            showToast("Saved"); 
+            showToast("Saved", false); 
             setTimeout(() => window.location.reload(), 1000); 
         } catch(e){ 
             showToast("Error",true); 
@@ -1431,6 +1489,10 @@
         // Also capture the dynamically rendered electricity agreement check!
         if (document.getElementById('form_needs_power')?.value === 'Yes' && document.getElementById('powerAgreementCheck')?.checked) {
             agreements.push("Electricity Requirements Acknowledgment");
+        }
+        
+        if (document.getElementById('lateAgreementContainer')?.style.display === 'block' && document.getElementById('lateAgreementCheck')?.checked) {
+            agreements.push("Late Application Strike Acknowledgment");
         }
         
         // Save the tracked array as a clean JSON string to the database
