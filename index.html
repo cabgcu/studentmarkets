@@ -13,30 +13,21 @@
 
     <style>
         :root {
-            /* Theme Colors */
+            /* V1 Survey UI Theme Colors */
             --bg-dark: #000000;
-            --glass-surface: rgba(15, 15, 15, 0.85); 
-            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-surface: rgba(0, 0, 0, 0.65); 
+            --glass-border: rgba(255, 255, 255, 0.18);
             --text-main: #ffffff;
-            --text-muted: #a1a1aa;
-            
-            /* Gradient Accents */
+            --text-muted: #d1d1d6;
             --gradient-accent: linear-gradient(135deg, #0A84FF, #BF5AF2);
-            --gradient-hover: linear-gradient(135deg, #007AFF, #AF52DE);
             --gradient-fire: linear-gradient(135deg, #FF9500, #FF3B30);
             --gradient-success: linear-gradient(135deg, #34C759, #30B0C7);
-            --gradient-nolan: linear-gradient(135deg, #FFD60A, #FF9F0A);
-            
-            /* Modern Rounding */
             --radius-card: 28px;
-            --radius-pill: 100px;
             --radius-btn: 16px;
-            --blur: 40px;
+            --blur-bg: 2px; 
+            --blur-card: 12px;
             
-            /* Font */
-            --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            
-            /* App Specific */
+            /* App Specific Layout */
             --max-width-content: 700px;
         }
         
@@ -44,14 +35,11 @@
         
         body { 
             margin: 0; 
-            font-family: var(--font-stack);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif; 
             color: var(--text-main); 
             background-color: var(--bg-dark); 
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
             min-height: 100vh; 
             overflow-x: hidden; 
-            -webkit-font-smoothing: antialiased;
-            /* Windows Firefox Scrollbars */
             scrollbar-width: thin;
             scrollbar-color: #444 transparent;
         }
@@ -61,131 +49,89 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; border: 2px solid var(--bg-dark); }
 
-        /* Windows Keyboard Accessibility - Shows only when using Tab key */
-        :focus-visible {
-            outline: 3px solid #0A84FF;
-            outline-offset: 3px;
-            border-radius: 6px;
-        }
+        :focus-visible { outline: 3px solid #0A84FF; outline-offset: 3px; border-radius: 6px; }
+        .no-save-pass { -webkit-text-security: disc !important; text-security: disc !important; }
 
+        /* V1 Survey Background Container - Blue/Purple Glow */
         #bg-container { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; overflow: hidden; 
-            background-color: #050505;
-            /* Brighter overlay gradient */
-            background-image: linear-gradient(rgba(0,0,0,0.60), rgba(0,0,0,0.75)), url('https://lh3.googleusercontent.com/d/1Q7do5GuhlylxCvqmlFOtilGxHSZsx2gp');
-            background-size: cover;
-            background-position: center;
+            background-color: #000000;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(10, 132, 255, 0.25) 0%, transparent 50%), 
+                radial-gradient(circle at 90% 80%, rgba(191, 90, 242, 0.25) 0%, transparent 50%); 
         }
 
-        /* Tighter mobile padding */
+        #bg-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; 
+            background: rgba(0, 0, 0, 0.2); 
+            backdrop-filter: blur(var(--blur-bg)); 
+            -webkit-backdrop-filter: blur(var(--blur-bg)); 
+        }
+
         .app-container { position: relative; max-width: 1280px; margin: 0 auto; padding: 16px 12px; min-height: 100vh; display: flex; flex-direction: column; transition: all 0.4s ease; }
         @media (min-width: 768px) { .app-container { padding: 40px 24px; } }
 
         /* Welcome Screen Constrained Layout */
-        .app-container.welcome-active {
-            justify-content: center;
-            align-items: center;
-            max-width: 420px;
-            padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
-        }
+        .app-container.welcome-active { justify-content: center; align-items: center; max-width: 420px; padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom); }
 
         .view { display: none; opacity: 0; transform: translateY(10px); transition: 0.3s ease; width: 100%; }
         .view.active { display: block; opacity: 1; transform: translateY(0); animation: fadeUp 0.4s ease forwards; }
         
-        .hero-banner { width: 100%; max-width: var(--max-width-content); margin: 0 auto 24px; border-radius: var(--radius-card); overflow: hidden; border: 1px solid var(--glass-border); box-shadow: 0 10px 40px rgba(0,0,0,0.4); background: #111; line-height: 0; transition: all 0.3s ease; }
+        .hero-banner { width: 100%; max-width: var(--max-width-content); margin: 0 auto 24px; border-radius: var(--radius-card); overflow: hidden; border: 1px solid var(--glass-border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); background: #111; line-height: 0; }
         .hero-banner img { width: 100%; height: auto; display: block; }
         
-        /* Pro Edition Glass Base */
+        /* V1 Survey Frosted Card Styling */
         .frosted { 
-            background: var(--glass-surface);
-            backdrop-filter: blur(var(--blur)) saturate(150%);
-            -webkit-backdrop-filter: blur(var(--blur)) saturate(150%);
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            background: var(--glass-surface); 
+            backdrop-filter: blur(var(--blur-card)); 
+            -webkit-backdrop-filter: blur(var(--blur-card)); 
+            border: 1px solid var(--glass-border); 
+            box-shadow: 0 30px 80px rgba(0,0,0,0.6); 
             border-radius: var(--radius-card);
-            transition: all 0.3s ease; 
         }
         
-        /* Tighter padding on mobile surveys */
-        .survey-card { width: 100%; max-width: var(--max-width-content); margin: 0 auto 30px; padding: 16px; }
+        .survey-card { width: 100%; max-width: var(--max-width-content); margin: 0 auto 30px; padding: 24px; }
         @media (min-width: 768px) { .survey-card { padding: 40px; margin-bottom: 40px; } }
 
         /* Dynamic Welcome Mode Overlay */
-        .survey-card.welcome-mode {
-            background: transparent;
-            border-color: transparent;
-            box-shadow: none;
-            backdrop-filter: none;
-            -webkit-backdrop-filter: none;
-            padding: 0;
-            margin-bottom: 0;
-        }
+        .survey-card.welcome-mode { background: transparent; border-color: transparent; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; padding: 0; margin-bottom: 0; }
 
         .section-header { font-size: 1.1rem; font-weight: 800; color: #ffffff; margin-bottom: 16px; margin-top: 24px; letter-spacing: 0.05em; display: flex; align-items: center; gap: 10px; }
         .section-header::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.1); }
 
         .form-group { margin-bottom: 24px; width: 100%; display: flex; flex-direction: column; height: 100%; }
+        .form-group > .control-item, .form-group > .custom-checkbox { margin-top: auto; }
         
-        /* Forces inputs to align at the bottom of the grid row regardless of label height */
-        .form-group > .control-item, 
-        .form-group > .custom-checkbox { 
-            margin-top: auto; 
-        }
-        
-        /* Tighter spacing between label/hint and the input bar */
-        .form-label { display: block; margin-bottom: 8px; color: #ffffff; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.3; width: 100%; }
-        .form-hint { display: block; margin-top: 2px; margin-bottom: 10px; color: var(--text-muted); font-size: 0.8rem; line-height: 1.4; text-transform: none; font-weight: 500; letter-spacing: 0; }
+        /* V1 Typography */
+        .form-label { display: block; margin-bottom: 12px; color: var(--text-muted); font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.4; }
+        .form-hint { display: block; margin-top: 2px; margin-bottom: 10px; color: #a1a1aa; font-size: 0.8rem; line-height: 1.4; text-transform: none; font-weight: 500; letter-spacing: 0; }
 
         .required-mark { color: #FF3B30; margin-left: 4px; font-weight: bold; }
 
-        /* Pro Edition Inputs */
+        /* V1 Survey Input Styling */
         input.control-item, select.control-item, textarea.control-item { 
-            width: 100%; 
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.08);
-            color: #fff; padding: 14px 18px; border-radius: var(--radius-btn); font-family: inherit; font-size: 1rem; font-weight: 600;
-            outline: none; transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
-        }
-        
-        input.control-item:hover, select.control-item:hover, textarea.control-item:hover { 
-            background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); 
+            width: 100%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); 
+            color: #fff; padding: 16px 20px; border-radius: var(--radius-btn); font-family: inherit; font-size: 1rem; 
+            outline: none; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
         }
 
         .control-item:focus { 
-            border-color: #0A84FF; box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.15); 
-            background: rgba(255,255,255,0.08);
+            border-color: #0A84FF; 
+            background: rgba(255,255,255,0.12); 
+            box-shadow: 0 0 15px rgba(10, 132, 255, 0.4), 0 0 2px rgba(191, 90, 242, 0.4);
+            transform: scale(1.01);
         }
 
-        /* Autofill Privacy Masking Styles */
-        .autofilled-masked {
-            color: #34C759 !important;
-            font-style: italic;
-            font-weight: 800 !important;
-            background: rgba(52, 199, 89, 0.05) !important;
-            border-color: rgba(52, 199, 89, 0.3) !important;
-        }
+        .autofilled-masked { color: #34C759 !important; font-style: italic; font-weight: 800 !important; background: rgba(52, 199, 89, 0.05) !important; border-color: rgba(52, 199, 89, 0.3) !important; }
 
         input[type="file"].control-item { padding: 12px 18px; cursor: pointer; font-weight: 500; }
-        input[type="file"]::file-selector-button {
-            border: none; background: rgba(255, 255, 255, 0.15); padding: 8px 16px;
-            border-radius: 8px; color: #fff; cursor: pointer; margin-right: 15px;
-            transition: 0.2s; font-weight: bold;
-        }
+        input[type="file"]::file-selector-button { border: none; background: rgba(255, 255, 255, 0.15); padding: 8px 16px; border-radius: 8px; color: #fff; cursor: pointer; margin-right: 15px; transition: 0.2s; font-weight: bold; }
         input[type="file"]::file-selector-button:hover { background: rgba(255, 255, 255, 0.25); }
 
-        select.control-item { 
-            cursor: pointer; padding-right: 36px; appearance: none; -webkit-appearance: none; 
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); 
-            background-repeat: no-repeat; background-position: right 14px center; background-size: 14px; 
-        }
+        select.control-item { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 24px center; background-size: 16px; padding-right: 52px; cursor: pointer;}
+        select.control-item option { background-color: #111; color: #fff; }
 
-        /* Fix for Windows dropdown menus to prevent invisible white-on-white text */
-        select.control-item option {
-            background-color: #111;
-            color: #fff;
-        }
-
-        textarea.control-item { min-height: 100px; resize: vertical; }
+        textarea.control-item { min-height: 120px; resize: vertical; }
         
         .custom-checkbox { display: flex; align-items: flex-start; gap: 12px; cursor: pointer; margin-bottom: 8px; font-size: 0.95rem; line-height: 1.5; color: #fff; background: rgba(255,255,255,0.04); padding: 14px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08); transition: 0.2s; width: 100%; font-weight: 500;}
         .custom-checkbox:hover { background: rgba(255,255,255,0.08); border-color: rgba(255, 255, 255, 0.15); }
@@ -193,31 +139,31 @@
 
         .conditional-section { display: none; background: rgba(255, 255, 255, 0.03); border-left: 4px solid #0A84FF; padding: 18px; border-radius: 0 12px 12px 0; margin-bottom: 20px; animation: fadeUp 0.3s ease; }
 
-        .btn { padding: 14px 30px; border-radius: var(--radius-btn); font-weight: 700; cursor: pointer; border: none; transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 1rem; width: 100%; }
-        @media (min-width: 768px) { .btn { width: auto; min-width: 250px; } }
+        /* V1 Button Styling */
+        .btn { padding: 18px 32px; border-radius: var(--radius-btn); font-weight: 700; cursor: pointer; border: none; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 1rem; width: 100%; }
+        @media (min-width: 768px) { .btn { width: auto; min-width: 250px;} }
 
-        .btn-primary { background: var(--gradient-accent); color: white; box-shadow: 0 4px 15px rgba(10, 132, 255, 0.2); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(10, 132, 255, 0.4); }
-        .btn-primary:active { transform: translateY(0); }
+        .btn-primary { background: var(--gradient-accent); color: white; box-shadow: 0 10px 20px rgba(10, 132, 255, 0.2); }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(10, 132, 255, 0.4); }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; min-width: auto; }
-        .btn-ghost:hover { background: rgba(255,255,255,0.1); }
+        .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); min-width: auto;}
+        .btn-ghost:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
         .loader { display: none; width: 18px; height: 18px; border: 2px solid #fff; border-bottom-color: transparent; border-radius: 50%; animation: rotation 1s linear infinite; margin-left: 10px; }
         
         @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
         #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 16px 24px; border-radius: 100px; background: var(--gradient-success); font-weight: 700; z-index: 3000; display: none; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.5); color: #fff; }
         
-        footer { margin-top:auto; padding:60px 0 40px; text-align:center; color: var(--text-muted); font-size: 0.85rem; font-weight: 500; letter-spacing: 0.02em; }
+        footer { margin-top:auto; padding:60px 0 40px; text-align:center; color: rgba(255, 255, 255, 0.4); font-size: 0.75rem; letter-spacing: 0.05em; line-height: 1.6; }
         .welcome-active footer { margin-top: 0; padding: 32px 0 10px; }
 
         .center-btn-wrapper { display: flex; justify-content: center; width: 100%; margin-top: 20px; }
         .success-icon { width: 80px; height: 80px; background: var(--gradient-success); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 40px; color: white; box-shadow: 0 10px 20px rgba(52, 199, 89, 0.3); }
-        .survey-header-center { text-align: center; margin-bottom: 25px; }
+        .survey-header-center { text-align: center; margin-bottom: 30px; }
         
-        .autofill-indicator { font-size: 0.8rem; color: #34C759; margin-top: 8px; display: none; font-weight: bold; background: rgba(52, 199, 89, 0.1); padding: 8px 12px; border-radius: 8px; display: inline-block; }
+        .autofill-indicator { font-size: 0.8rem; color: #34C759; margin-top: 8px; font-weight: bold; background: rgba(52, 199, 89, 0.1); padding: 8px 12px; border-radius: 8px; display: inline-block; }
 
         .dynamic-form-grid { display: grid; grid-template-columns: 1fr; gap: 32px; }
         @media (min-width: 600px) {
@@ -227,27 +173,21 @@
             .dynamic-form-grid .form-group { margin-bottom: 0; } 
         }
 
-        #marketSelectionContainer { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
-        .market-option { background: rgba(255,255,255,0.04); border: 1px solid rgba(255, 255, 255, 0.08); padding: 16px; border-radius: var(--radius-btn); display: flex; align-items: flex-start; gap: 12px; cursor: pointer; transition: 0.2s; }
+        #marketSelectionContainer { width: 100%; display: flex; flex-direction: column; gap: 12px; margin-bottom: 10px; }
+        .market-option { background: rgba(255,255,255,0.04); border: 1px solid rgba(255, 255, 255, 0.15); padding: 16px; border-radius: var(--radius-btn); display: flex; align-items: flex-start; gap: 12px; cursor: pointer; transition: 0.2s; }
         .market-option:hover { background: rgba(255,255,255,0.08); }
-        .market-option.selected { border-color: #0A84FF; background: rgba(10, 132, 255, 0.1); box-shadow: 0 0 0 1px #0A84FF, inset 0 2px 10px rgba(0, 0, 0, 0.1); }
+        .market-option.selected { border-color: #0A84FF; background: rgba(10, 132, 255, 0.1); box-shadow: 0 0 15px rgba(10, 132, 255, 0.2); transform: scale(1.01); }
         .market-option input { width: 18px; height: 18px; accent-color: #0A84FF; margin-top: 2px; flex-shrink: 0; }
         .market-name { font-weight: 800; color: #fff; font-size: 1.05rem; display: block; margin-bottom: 4px; }
         .market-meta { font-size: 0.85rem; color: var(--text-muted); display: block; line-height: 1.5; font-weight: 500;}
 
-        .summary-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px; text-align: center; }
-        .summary-value { font-size: 1.05rem; color: #fff; display: block; margin-bottom: 24px; font-weight: 600; line-height: 1.4; text-align: center; word-break: break-word;}
-
-        .modal { position: fixed; inset: 0; z-index: 1000; display: none; justify-content: center; align-items: center; padding: 20px; }
+        /* Modals & Popups */
+        .modal { position: fixed; inset: 0; z-index: 1000; display: none; justify-content: center; align-items: center; padding: 16px; }
         .modal.show { display: flex; }
-        .modal-bg { position: absolute; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(20px); }
-        .modal-content { position: relative; width: 100%; max-width: 400px; background: #0a0a0a; border-radius: 32px; padding: 24px; border: 1px solid var(--glass-border); text-align: center; box-shadow: 0 50px 100px rgba(0,0,0,0.8); }
-        @media(max-width: 800px) { .modal { padding: 0; } .modal-content { height: 100%; border-radius: 0; justify-content: center;} }
-
-        .builder-q-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 16px; margin-bottom: 12px; position: relative;}
-        .builder-q-remove { position: absolute; top: 12px; right: 12px; color: #FF3B30; cursor: pointer; font-weight: bold; background: none; border: none; font-size: 1.2rem; }
-
-        /* WIZARD SPECIFIC STYLES */
+        .modal-bg { position: absolute; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); }
+        .modal-content { position: relative; width: 100%; max-width: 400px; background: #000; border-radius: 32px; padding: 32px; border: 1px solid var(--glass-border); text-align: center; }
+        
+        /* Wizard Logic */
         .form-step { display: none; opacity: 0; transform: translateY(10px); transition: 0.3s ease; }
         .form-step.active { display: block; opacity: 1; transform: translateY(0); animation: fadeUp 0.4s ease forwards; }
         
@@ -260,7 +200,7 @@
         .progress-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2); transition: 0.3s; }
         .progress-dot.active { background: #0A84FF; transform: scale(1.2); }
 
-        /* --- EXCLUSIVE WELCOME UI STYLES --- */
+        /* Welcome UI matched to V1 */
         .arena-tag {
             display: inline-flex; align-items: center; padding: 6px 16px; border-radius: 100px; 
             background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); 
@@ -269,26 +209,25 @@
         }
         
         .glass-card-inner {
-            background: var(--glass-surface);
-            backdrop-filter: blur(var(--blur)) saturate(150%);
-            -webkit-backdrop-filter: blur(var(--blur)) saturate(150%);
+            background: var(--glass-surface); 
+            backdrop-filter: blur(var(--blur-card)); 
+            -webkit-backdrop-filter: blur(var(--blur-card)); 
             border: 1px solid var(--glass-border); 
+            box-shadow: 0 30px 80px rgba(0,0,0,0.6); 
             border-radius: var(--radius-card); 
-            padding: 24px 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            padding: 32px 24px;
             text-align: center; margin: 0 auto; width: 100%; max-width: 420px;
         }
 
         .big-action-btn {
             background: var(--gradient-accent); color: white;
-            border: none; padding: 16px; width: 100%; border-radius: 100px;
+            border: none; padding: 18px; width: 100%; border-radius: var(--radius-btn);
             font-weight: 800; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em;
             cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 10px 30px rgba(10, 132, 255, 0.3);
             touch-action: manipulation;
         }
         .big-action-btn:not(:disabled) { animation: pulse-glow 2.5s infinite; }
         .big-action-btn:not(:disabled):hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(10, 132, 255, 0.5); }
-        .big-action-btn:active { transform: translateY(0); }
         .big-action-btn:disabled { opacity: 0.25; background: #3a3a3c; box-shadow: none; cursor: not-allowed; animation: none; color: #777; }
         
         @keyframes pulse-glow {
@@ -296,78 +235,36 @@
             50% { transform: scale(1.02); box-shadow: 0 15px 35px -8px rgba(10, 132, 255, 0.6); }
         }
 
-        /* Smaller, more consistent input styling */
         .neon-input {
-            width: 100%; 
-            font-family: inherit;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: var(--radius-btn); padding: 14px 18px;
-            color: white; font-size: 1.1rem; font-weight: 600;
+            width: 100%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); 
+            border-radius: var(--radius-btn); padding: 16px 20px;
+            color: white; font-size: 1.1rem; font-weight: 600; font-family: inherit;
             outline: none; transition: 0.3s; text-align: center;
         }
-        .neon-input::placeholder {
-            color: rgba(255, 255, 255, 0.4);
-            font-weight: 500; 
-        }
-        .neon-input:focus { 
-            border-color: #0A84FF; 
-            box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.15); 
-            background: rgba(255,255,255,0.08);
-        }
+        .neon-input::placeholder { color: rgba(255, 255, 255, 0.4); font-weight: 500; }
+        .neon-input:focus { border-color: #0A84FF; box-shadow: 0 0 15px rgba(10, 132, 255, 0.4), 0 0 2px rgba(191, 90, 242, 0.4); background: rgba(255,255,255,0.12); transform: scale(1.01); }
 
-        /* Status Card Specific UI */
-        .status-market-card {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 16px;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-        .status-market-card:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.2); }
+        #step0-status-btn { background: none; border: none; color: var(--text-muted); text-decoration: underline; font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-top: 20px; width: 100%; transition: 0.2s; }
+        #step0-status-btn:disabled { opacity: 0.3; text-decoration: none; cursor: not-allowed; }
+        #step0-status-btn:hover:not(:disabled) { color: #fff; }
+
+        /* Admin / Status Elements styled to V1 */
+        .builder-q-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 16px; margin-bottom: 12px; position: relative;}
+        .builder-q-remove { position: absolute; top: 12px; right: 12px; color: #FF3B30; cursor: pointer; font-weight: bold; background: none; border: none; font-size: 1.2rem; }
+        
+        .status-market-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 20px; margin-bottom: 16px; transition: all 0.3s ease; }
         .status-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-        .status-name { font-weight: 800; font-size: 1.1rem; color: #fff; line-height: 1.2; }
+        .status-name { font-weight: 800; font-size: 1.1rem; color: #fff; line-height: 1.2; text-align: left; }
         .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 100px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-        .status-meta { font-size: 0.8rem; color: var(--text-muted); display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; margin-bottom: 16px; }
-        .resend-btn { 
-            width: 100%; background: rgba(10, 132, 255, 0.1); border: 1px solid rgba(10, 132, 255, 0.3); 
-            color: #0A84FF; padding: 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 700; 
-            cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
-        }
+        .status-meta { font-size: 0.8rem; color: var(--text-muted); display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; margin-bottom: 16px; text-align: left;}
+        .resend-btn { width: 100%; background: rgba(10, 132, 255, 0.1); border: 1px solid rgba(10, 132, 255, 0.3); color: #0A84FF; padding: 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .resend-btn:hover { background: rgba(10, 132, 255, 0.2); border-color: #0A84FF; color: #fff; }
-        .resend-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        /* Welcome Screen Status Link Styling */
-        #step0-status-btn {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            text-decoration: underline;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 20px;
-            width: 100%;
-            transition: 0.2s;
-            display: block;
-            opacity: 1;
-        }
-        #step0-status-btn:disabled {
-            opacity: 0.3;
-            text-decoration: none;
-            cursor: not-allowed;
-        }
-        #step0-status-btn:hover:not(:disabled) {
-            color: #fff;
-        }
     </style>
 </head>
 <body>
 
 <div id="bg-container"></div>
+<div id="bg-overlay"></div>
 
 <div class="app-container welcome-active" id="mainAppContainer">
     <div class="hero-banner" id="heroBanner" style="display:none;">
@@ -392,7 +289,7 @@
                             <span style="width: 6px; height: 6px; background: #ffffff; border-radius: 50%; margin-right: 8px; box-shadow: 0 0 8px #ffffff;"></span>
                             STUDENT MARKET 2026
                         </div>
-                        <h1 style="margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; text-transform: uppercase; background: var(--gradient-accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">VENDOR<br>APPLICATION</h1>
+                        <h1 style="margin: 0; font-size: 1.8rem; letter-spacing: -0.02em; line-height: 1.1; text-transform: uppercase;">VENDOR<br>APPLICATION</h1>
                         <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 15px; margin-bottom: 25px; font-weight: 500;">Please enter your Student ID to begin the application.</p>
                     </div>
                     
@@ -405,7 +302,6 @@
                         </div>
                         <button id="step0-next-btn" class="big-action-btn" onclick="nextPrev(1)" disabled>Start Application</button>
                         
-                        <!-- Status Check Underline Link -->
                         <button id="step0-status-btn" onclick="checkStatus()" disabled>Check Application Status</button>
                     </div>
                 </div>
@@ -413,23 +309,21 @@
                 <!-- STEP 1: Market Selection -->
                 <div class="form-step" id="step-1">
                     <div class="survey-header-center">
-                        <h3 id="appTitle" style="margin-top:0; font-size: 1.5rem; letter-spacing: -0.02em; line-height: 1.2; background: var(--gradient-accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Select Market</h3>
+                        <h3 id="appTitle" style="margin-top:0; font-size: 1.5rem; letter-spacing: -0.02em; line-height: 1.2;">Select Market</h3>
                         <div id="appDesc" style="color: var(--text-muted); margin: 12px auto; line-height: 1.5; font-size: 0.9rem; max-width: 95%;">
                             Loading available markets...
                         </div>
                         <span style="font-size: 0.75rem; color: #FF3B30; font-weight: 700; text-transform: uppercase;">* Indicates required question</span>
                     </div>
 
-                    <!-- Clean Fieldset setup guarantees screen reader accessibility and announces selection properly -->
                     <fieldset class="form-group full-width" style="margin-bottom:15px; border:none; padding:0; margin:0;">
                         <legend class="form-label" id="lbl-market-selection" style="width:100%;">Which Market are you applying for?<span class="required-mark">*</span></legend>
                         <div id="marketSelectionContainer"></div>
 
-                        <!-- Dynamic Late Application Strike Warning Container -->
                         <div id="lateAgreementContainer" style="display:none; background: rgba(255, 59, 48, 0.05); border: 1px solid rgba(255, 59, 48, 0.3); padding: 18px; border-radius: 16px; margin-top: 20px; animation: fadeUp 0.3s ease;">
                             <label class="custom-checkbox" style="border-color: rgba(255, 59, 48, 0.4); background: rgba(0,0,0,0.5); margin-bottom: 0;">
                                 <input type="checkbox" id="lateAgreementCheck">
-                                <span style="color: #FF3B30; font-weight: 700; font-size: 0.85rem;">I acknowledge that I am applying PAST the official deadline. I understand that submitting this application counts as a Late Strike, and accumulating 3 strikes will result in a ban from future markets.</span>
+                                <span style="color: #FF3B30; font-weight: 700; font-size: 0.85rem;">I acknowledge that I am applying PAST the official deadline. I understand that submitting this application counts as a Late Strike.</span>
                             </label>
                         </div>
                     </fieldset>
@@ -456,7 +350,7 @@
         <div class="frosted survey-card">
             <div style="text-align: center;">
                 <div class="success-icon">✓</div>
-                <h2 style="margin-top:0; font-size: 1.8rem; background: var(--gradient-accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent;" id="successGreeting">Application Received!</h2>
+                <h2 style="margin-top:0; font-size: 1.8rem;" id="successGreeting">Application Received!</h2>
                 <p style="color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; font-size: 0.95rem;">
                     Thank you for applying! Your application is now under review. Keep an eye on your email for updates.
                 </p>
@@ -478,7 +372,7 @@
     <!-- ADMIN BUILDER VIEW -->
     <div id="adminView" class="view">
         <div class="frosted survey-card" style="max-width: 900px;">
-            <h2 style="margin-top:0; font-size: 1.8rem; background: var(--gradient-accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Form Builder Admin</h2>
+            <h2 style="margin-top:0; font-size: 1.8rem;">Form Builder Admin</h2>
             <div class="section-header">Global Branding & Text</div>
             <div class="form-group"><label class="form-label">Header Image URL</label><input type="text" id="adminHeaderUrl" class="control-item"></div>
             <div class="form-group"><label class="form-label">Global Form Title</label><input type="text" id="adminEventTitle" class="control-item" placeholder="Leave blank for default"></div>
@@ -511,8 +405,8 @@
 <div id="gateModal" class="modal">
     <div class="modal-bg" onclick="hideAdminGate()"></div>
     <div class="modal-content">
-        <h3 style="margin-top:0; margin-bottom: 20px; font-size: 1.5rem; background: var(--gradient-accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Authorization</h3>
-        <input type="password" id="adminPass" class="control-item" placeholder="Enter Password" style="margin-bottom:24px; text-align: center;" onkeyup="if(event.key==='Enter') verifyAdmin()"/>
+        <h3 style="margin-top:0; margin-bottom: 20px; font-size: 1.5rem;">Authorization</h3>
+        <input type="password" id="adminPass" class="control-item no-save-pass" placeholder="Enter Password" style="margin-bottom:24px; text-align: center;" onkeyup="if(event.key==='Enter') verifyAdmin()"/>
         <button class="btn btn-primary" onclick="verifyAdmin()" style="width: 100%;">Authorize</button>
     </div>
 </div>
@@ -520,9 +414,9 @@
 <!-- Application Status Modal -->
 <div id="statusModal" class="modal">
     <div class="modal-bg" onclick="document.getElementById('statusModal').classList.remove('show')"></div>
-    <div class="modal-content" style="max-width: 500px; text-align: left; background: #0a0a0a; border-radius: 32px; padding: 24px; box-shadow: 0 0 100px rgba(0,0,0,0.9); border: 1px solid rgba(255,255,255,0.15);">
+    <div class="modal-content" style="max-width: 500px; text-align: left;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
-            <h3 style="margin:0; font-size: 1.4rem; font-weight: 800; background: var(--gradient-accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-transform: uppercase; letter-spacing: -0.02em;">My Applications</h3>
+            <h3 style="margin:0; font-size: 1.4rem; font-weight: 800; text-transform: uppercase; letter-spacing: -0.02em;">My Applications</h3>
             <button onclick="document.getElementById('statusModal').classList.remove('show')" style="background:rgba(255,255,255,0.05); border:none; color:#fff; width:32px; height:32px; border-radius:50%; cursor:pointer; line-height: 32px; text-align:center;">&times;</button>
         </div>
         <div id="statusModalContent" style="max-height: 60vh; overflow-y: auto; padding-right: 5px; scrollbar-width: none;"></div>
@@ -545,7 +439,6 @@
     // --- AUTOFILL PRIVACY LISTENERS ---
     document.addEventListener('focusin', (e) => {
         if (e.target.classList && e.target.classList.contains('autofilled-masked') && e.target.value === 'Information on File') {
-            // When a masked field is clicked, clear it so they can enter new text
             e.target.value = '';
             e.target.classList.remove('autofilled-masked');
             if (e.target.dataset.originalType) {
@@ -557,19 +450,16 @@
     document.addEventListener('focusout', (e) => {
         if (e.target.dataset && e.target.dataset.wasMasked === 'true') {
             if (e.target.value.trim() === '') {
-                // If they left it blank, restore the masked placeholder
                 e.target.type = 'text';
                 e.target.value = 'Information on File';
                 e.target.classList.add('autofilled-masked');
             } else if (e.target.value.trim() !== 'Information on File') {
-                // User typed fresh data, clear out the masked PII history so their new entry saves
                 delete e.target.dataset.autofilled;
                 delete e.target.dataset.wasMasked;
             }
         }
     });
 
-    // Helper to safely parse and append to the internal timeline
     function getParsedNotes(noteStr) {
         if (!noteStr || noteStr.trim() === '') return [];
         try {
@@ -588,11 +478,9 @@
 
     async function handleVendorConfirmation(id, action) {
         try {
-            // Guarantee the form UI is entirely hidden if a student lands on this link
             const mainApp = document.getElementById('mainAppContainer');
             if (mainApp) mainApp.style.display = 'none';
             
-            // Show loading screen
             const msgDiv = document.createElement('div');
             msgDiv.id = 'confirmation-loading-screen';
             msgDiv.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#050505; color:white; font-family:var(--font-stack); z-index:999999;";
@@ -600,7 +488,6 @@
             <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>`;
             document.body.appendChild(msgDiv);
             
-            // Attempt to update the column "attendance_confirmed"
             const { error } = await _supabase.from('vendors').update({ attendance_confirmed: true }).eq('id', id);
             
             if (error) throw error;
@@ -613,7 +500,6 @@
             
         } catch (err) {
             console.error("Confirmation Error:", err);
-            // Catch-all safety screen so they NEVER see a blank page
             const errDiv = document.getElementById('confirmation-loading-screen');
             if (errDiv) {
                 errDiv.innerHTML = `
@@ -625,7 +511,6 @@
         }
     }
 
-    // Helper to handle Google Drive image links
     function processImageUrl(url) {
         if (!url) return "";
         if (url.includes('drive.google.com')) {
@@ -645,13 +530,13 @@
     let currentTab = 0;
     let isNavigating = false;
     let isAppClosed = false;
-    let marketConfigV3 = {}; // Global store for per-market settings
+    let marketConfigV3 = {}; 
 
     const defaultQuestions = [
         { id: 'section_personal', type: 'section_header', label: 'Personal Information', width: 'full', isCore: true },
         { id: 'student_id', type: 'number', label: 'Student ID Number', hint: 'Type your ID and tap Next to auto-fill your info!', required: true, width: 'full', isCore: true },
         { id: 'full_name_combined', type: 'text', label: 'First and Last Name', hint: '', required: true, width: 'full', isCore: false },
-        { id: 'preferred_email', type: 'email', label: 'Preferred Email', hint: 'Vendor confirmation emails will be sent to your preferred email! Please double check that your email is correct and not misspelled in any way! If it is, you won\'t recieve a confirmation email!', required: true, width: 'full', isCore: true },
+        { id: 'preferred_email', type: 'email', label: 'Preferred Email', hint: 'Vendor confirmation emails will be sent to your preferred email!', required: true, width: 'full', isCore: true },
         { id: 'gcu_email', type: 'email', label: 'GCU Email', hint: '', required: true, width: 'full', isCore: true },
         { id: 'phone', type: 'tel', label: 'Phone Number', hint: '', required: true, width: 'half', isCore: true },
         { id: 'communication_method', type: 'dropdown', label: 'Preferred Communication Method', hint: '', options: 'Email, Text', required: true, width: 'half', isCore: true },
@@ -659,21 +544,21 @@
         { id: 'availability', type: 'dropdown', label: 'Will you be available for the duration of the market?', hint: '', options: 'Yes, No', required: true, width: 'half', isCore: true },
         
         { id: 'section_vendor', type: 'section_header', label: 'Vendor Details', width: 'full', isCore: true },
-        { id: 'food_license', type: 'dropdown', label: 'If you are selling food, do you have your food handlers\' license? This is required to sell food or drinks at our market. If you do not have one, please do not submit this application until you do!', hint: '', options: 'Yes, No, Not applicable', required: true, width: 'full', isCore: true },
+        { id: 'food_license', type: 'dropdown', label: 'If you are selling food, do you have your food handlers\' license?', hint: '', options: 'Yes, No, Not applicable', required: true, width: 'full', isCore: true },
         { id: 'past_vendor', type: 'dropdown', label: 'Have you ever worked with CAB at a student market before?', hint: '', options: 'Yes, No', required: true, width: 'full', isCore: true },
         { id: 'description', type: 'textarea', label: 'Vendor/Project Description', hint: '', required: true, width: 'full', isCore: true },
-        { id: 'link', type: 'text', label: 'Social Media Handle or Website (Showcasing Your Products)', hint: 'This is not your personal social media account, but rather one that displays the business you\'re running and the items you intend to sell. Note: if your business doesn\'t have a social media account or website, you may include the link to a Google Doc with pictures. Important: make sure the document is public and visible!', required: true, width: 'full', isCore: true },
+        { id: 'link', type: 'text', label: 'Social Media Handle or Website', hint: 'This is not your personal social media account...', required: true, width: 'full', isCore: true },
         
         { id: 'section_logistics', type: 'section_header', label: 'Electricity Vendors', width: 'full', isCore: true },
-        { id: 'needs_power', type: 'dropdown', label: 'Do you need to be by an outlet or have access to a power source to run your table?', hint: '', options: 'Yes, No', required: true, width: 'full', isCore: true },
+        { id: 'needs_power', type: 'dropdown', label: 'Do you need to be by an outlet or have access to a power source?', hint: '', options: 'Yes, No', required: true, width: 'full', isCore: true },
         
         { id: 'section_agreements', type: 'section_header', label: 'Check the boxes to acknowledge', width: 'full', isCore: false },
-        { id: 'agree_liability', type: 'checkbox_single', label: 'Liability Acknowledgment', hint: 'I acknowledge that CAB and Grand Canyon University are not responsible and cannot be held liable for the product or quality of the product being sold. As the seller I am liable and bound by any verbal statements/agreement pertaining to the item being sold and am responsible for any causes or results from using its products, services, or any information provided.', required: true, width: 'full', isCore: false },
-        { id: 'agree_taxes', type: 'checkbox_single', label: 'Taxes Acknowledgment', hint: 'I acknowledge that as the seller I am fully responsible for claiming income received from this market on applicable taxes. CAB and Grand Canyon University serve as a host to the business owner by offering a free platform for the entrepreneur and thereby do not collect any fees or income from vendors.', required: true, width: 'full', isCore: false },
-        { id: 'agree_safety', type: 'checkbox_single', label: 'Safety Acknowledgment', hint: 'I acknowledge that if I as a vendor cannot maintain a safe, friendly and respectful environment, CAB will be obligated to shut down the vendors booth for safety measures.', required: true, width: 'full', isCore: false },
-        { id: 'agree_terms', type: 'checkbox_single', label: 'Terms Acknowledgment', hint: 'By applying for student market you acknowledge our terms and hereby consent to our disclaimer and agree to its terms.', required: true, width: 'full', isCore: false },
-        { id: 'agree_media', type: 'checkbox_single', label: 'Media Acknowledgment', hint: 'I acknowledge and accept that GCU Student Engagement and CAB Marketing may be utilizing photography and videography at this event that may include myself or my products.', required: true, width: 'full', isCore: false },
-        { id: 'additional_comments', type: 'textarea', label: 'Additional Comments, Requests, or Anything You May Need From CAB to Run Your Table Smoothly', hint: 'For any additional questions or concerns, please email lopetownmarket@gmail.com. Thank you for your time!', required: false, width: 'full', isCore: true }
+        { id: 'agree_liability', type: 'checkbox_single', label: 'Liability Acknowledgment', hint: 'I acknowledge that CAB and Grand Canyon University are not responsible...', required: true, width: 'full', isCore: false },
+        { id: 'agree_taxes', type: 'checkbox_single', label: 'Taxes Acknowledgment', hint: 'I acknowledge that as the seller I am fully responsible for claiming income...', required: true, width: 'full', isCore: false },
+        { id: 'agree_safety', type: 'checkbox_single', label: 'Safety Acknowledgment', hint: 'I acknowledge that if I as a vendor cannot maintain a safe...', required: true, width: 'full', isCore: false },
+        { id: 'agree_terms', type: 'checkbox_single', label: 'Terms Acknowledgment', hint: 'By applying for student market you acknowledge our terms...', required: true, width: 'full', isCore: false },
+        { id: 'agree_media', type: 'checkbox_single', label: 'Media Acknowledgment', hint: 'I acknowledge and accept that GCU Student Engagement...', required: true, width: 'full', isCore: false },
+        { id: 'additional_comments', type: 'textarea', label: 'Additional Comments or Requests', hint: '', required: false, width: 'full', isCore: true }
     ];
 
     let formConfig = { headerUrl: "https://lh3.googleusercontent.com/d/177iu9igWGiUkD8vdJhZn80PXgLa6hM3c", questions: [], forceStatus: 'auto', eventTitle: null, eventDesc: null };
@@ -732,17 +617,12 @@
             const now = new Date();
             
             let openMarkets = data.filter(e => {
-                // Ensure ID checking aligns exactly as string vs string
                 const evConfig = marketConfigV3[String(e.id)] || {};
-                
-                // IGNORE GLOBAL SETTINGS FOR SPECIFIC MARKETS!
-                // Read specific status, default ONLY to auto.
                 const status = evConfig.forceStatus || 'auto';
                 
                 if (status === 'closed') return false;
                 if (status === 'open') return true;
                 
-                // 'auto' mode checks the calendar dates
                 const isPastOpen = !e.app_open || new Date(e.app_open) <= now;
                 const isBeforeClose = !e.app_close || new Date(e.app_close) >= now;
                 return isPastOpen && isBeforeClose;
@@ -780,7 +660,6 @@
                     const singleMarket = openMarkets[0];
                     const specificConfig = marketConfigV3[String(singleMarket.id)] || {};
                     
-                    // Pull specific title for this market, or fallback
                     document.getElementById('appTitle').innerHTML = specificConfig.title || singleMarket.name || formConfig.eventTitle || "Vendor Application";
                     
                     let descHtml = specificConfig.description || singleMarket.description || formConfig.eventDesc || "";
@@ -798,8 +677,6 @@
                     const d = new Date(e.market_date + 'T12:00:00');
                     const formattedDate = d.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
                     const formattedClose = e.app_close ? new Date(e.app_close).toLocaleString() : 'TBD';
-                    
-                    // Calculate if this market is technically past its deadline but currently forced open
                     const isLate = e.app_close && new Date(e.app_close) < now;
                     
                     return `
@@ -874,8 +751,6 @@
             const { data: v3Data } = await _supabase.from('secrets').select('value').eq('name', 'MARKET_FORM_CONFIG_V3').maybeSingle();
             if (v3Data?.value) {
                 try { marketConfigV3 = JSON.parse(v3Data.value); } catch(e){}
-                
-                // Fallback for older global format
                 formConfig.forceStatus = marketConfigV3.forceStatus || 'auto';
                 if (!v8HasText) {
                     formConfig.eventTitle = marketConfigV3.title || null;
@@ -927,7 +802,7 @@
                 if (currentStepDiv) dynamicStepsContainer.appendChild(currentStepDiv);
                 currentStepDiv = document.createElement('div');
                 currentStepDiv.className = 'form-step';
-                currentStepDiv.innerHTML = `<div class="survey-header-center"><h3 style="margin-top:0; margin-bottom: 15px; font-size: 1.4rem; background: var(--gradient-accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.02em;">${q.label}</h3></div>`;
+                currentStepDiv.innerHTML = `<div class="survey-header-center"><h3 style="margin-top:0; margin-bottom: 15px; font-size: 1.4rem;">${q.label}</h3></div>`;
                 currentGrid = document.createElement('div');
                 currentGrid.className = 'dynamic-form-grid';
                 currentStepDiv.appendChild(currentGrid);
@@ -961,6 +836,7 @@
         const mainCard = document.getElementById('mainSurveyCard');
         const wizardNav = document.getElementById('wizardNavContainer');
         const progressEl = document.getElementById('wizardProgress');
+        
         if (n === 0) {
             appContainer.classList.add('welcome-active');
             heroBanner.style.display = 'none';
@@ -1043,7 +919,6 @@
                 
                 let val = input.value.trim();
                 
-                // Unmask "Information on File" placeholder to check the real data
                 if (input.dataset && input.dataset.autofilled && val === 'Information on File') {
                     val = input.dataset.autofilled;
                 }
@@ -1059,7 +934,6 @@
                     }
                 }
                 
-                // Strict Email Validations
                 if (q && q.type === 'email' && val !== "") {
                     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                     if (!emailRegex.test(val)) {
@@ -1154,7 +1028,6 @@
                 if (!event) return null;
                 let displayStatus = 'In Review';
                 
-                // Track any template that was actually sent instead of just looking for "Yes"
                 if (app.email_sent && app.email_sent !== 'No') {
                     if (app.status === 'Approved' || app.status === 'Checked In') displayStatus = 'Approved';
                     else if (app.status === 'Denied') displayStatus = 'Denied';
@@ -1174,7 +1047,6 @@
                 if (a.displayStatus === 'Approved') { color = '#34C759'; icon = '✅'; }
                 if (a.displayStatus === 'Denied') { color = '#FF3B30'; icon = '❌'; }
 
-                // The resend button should appear for anyone who has been emailed
                 const canResend = (a.email_sent && a.email_sent !== 'No');
 
                 html += `
@@ -1219,7 +1091,6 @@
             const apiKey = secrets.find(s => s.name === 'BREVO_API_KEY')?.value;
             if(!apiKey) throw new Error("API Key missing");
 
-            // Extract the global public URL from the DB to match the Admin system EXACTLY
             const publicUrlConfig = secrets.find(s => s.name === 'PUBLIC_APP_URL')?.value;
 
             const { data: vendor } = await _supabase.from('vendors').select('*').eq('id', appId).single();
@@ -1227,11 +1098,9 @@
 
             let subj = '', body = '';
             
-            // 1. Ensure we parse the exact template type that was sent to the student previously
             let targetTemplate = vendor.email_sent;
             const isApproved = vendor.status === 'Approved' || vendor.status === 'Checked In';
 
-            // Fallback inference if the database isn't perfectly clean
             if (!targetTemplate || targetTemplate === 'Yes' || targetTemplate === 'No') {
                 if (isApproved) {
                     targetTemplate = vendor.needs_power === 'Yes' ? 'power' : 'approved';
@@ -1252,14 +1121,12 @@
                 subj = event.template_denied_subject; body = event.template_denied_body;
             }
 
-            // 2. Inject confirmation button if approval email and not yet present
             if (['approved', 'power', 'power_denied'].includes(targetTemplate)) {
                 if (body && !body.includes('{{CONFIRM_LINK}}')) {
                     body += "\n\n**Please click a link below to confirm your status by {{CONFIRM_DEADLINE}}:**\n{{CONFIRM_LINK}}\n{{DECLINE_LINK}}";
                 }
             }
 
-            // 3. Setup dynamic tracking link using the official PUBLIC URL
             let baseUrl = publicUrlConfig || window.location.href.split('?')[0].split('#')[0];
             if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
             if (baseUrl && !baseUrl.startsWith('http')) baseUrl = 'https://' + baseUrl;
@@ -1271,7 +1138,6 @@
             const formatDate = (dStr) => dStr ? new Date(dStr + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '';
             const formatDateTime = (dtStr) => dtStr ? new Date(dtStr).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) + ' at ' + new Date(dtStr).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
 
-            // 4. Inject all dynamic variables into templates
             let rawBody = (body || '').replace(/\{\{FIRST\}\}/g, vendor.first_name)
                               .replace(/\{\{MARKET_NAME\}\}/g, event.name)
                               .replace(/\{\{LOCATION\}\}/g, event.location)
@@ -1285,7 +1151,6 @@
                               .replace(/\{\{DECLINE_LINK\}\}/g, finalDeclineLink)
                               .replace(/\{\{EVENT\}\}/g, event.name);
 
-            // Create plain text fallback for robust email delivery
             let plainTextStr = rawBody.replace(/\*\*(.*?)\*\*/g, '$1');
             plainTextStr = plainTextStr.replace(finalConfirmLink, `\n\nConfirm Attendance Here: ${confirmUrl}\n`);
             plainTextStr = plainTextStr.replace(finalDeclineLink, `\nDecline/Cancel Spot Here: ${declineUrl}\n`);
@@ -1298,7 +1163,6 @@
             const statusColor = isApproved ? '#34C759' : '#FF3B30';
             const statusBadgeText = isApproved ? 'APPROVED' : 'STATUS UPDATE';
 
-            // 5. Fixed QR Data payload matching Hardware scanners directly
             const barcodeData = vendor.student_id || vendor.id.substring(0,8);
             const qrHtml = isApproved ? `
                 <tr><td style="padding: 0 15px; background-color: #ffffff;"><div style="border-top: 2px dashed #e5e7eb; width: 100%; height: 1px;"></div></td></tr>
@@ -1356,12 +1220,14 @@
     function showAdminGate() { document.getElementById('gateModal').classList.add('show'); }
     function hideAdminGate() { document.getElementById('gateModal').classList.remove('show'); }
     function verifyAdmin() { if (document.getElementById('adminPass').value === 'Vendor49!') { hideAdminGate(); renderAdminPanel(); switchView('admin'); } else { showToast('Invalid', true); } }
+    
     function renderAdminPanel() { 
         document.getElementById('adminHeaderUrl').value = formConfig.headerUrl || ''; 
         document.getElementById('adminEventTitle').value = formConfig.eventTitle || '';
         document.getElementById('adminEventDesc').value = formConfig.eventDesc || '';
         renderAdminQuestionsList(); 
     }
+    
     function renderAdminQuestionsList() {
         const list = document.getElementById('adminQuestionsList');
         list.innerHTML = formConfig.questions.map((q, i) => `
@@ -1396,6 +1262,7 @@
     function deleteQ(i) { formConfig.questions.splice(i, 1); renderAdminQuestionsList(); }
     function moveQ(i, d) { let n=i+d; if(n<0||n>=formConfig.questions.length)return; [formConfig.questions[i],formConfig.questions[n]]=[formConfig.questions[n],formConfig.questions[i]]; renderAdminQuestionsList(); }
     function updateQ(i,k,v) { formConfig.questions[i][k]=v; if (k === 'type') renderAdminQuestionsList(); }
+    
     async function saveAdminConfig() { 
         formConfig.headerUrl = document.getElementById('adminHeaderUrl').value;
         formConfig.eventTitle = document.getElementById('adminEventTitle').value;
@@ -1424,11 +1291,10 @@
                         else if (v[q.id]) actualVal = v[q.id];
 
                         if (actualVal) {
-                            // Mask the PII fields securely
                             if (['full_name_combined', 'preferred_email', 'gcu_email', 'phone'].includes(q.id)) {
-                                el.dataset.autofilled = actualVal; // hidden real data
-                                el.dataset.originalType = el.type || 'text'; // save native type
-                                el.type = 'text'; // change type so textual mask is valid in DOM
+                                el.dataset.autofilled = actualVal;
+                                el.dataset.originalType = el.type || 'text';
+                                el.type = 'text';
                                 el.value = 'Information on File';
                                 el.classList.add('autofilled-masked');
                                 el.dataset.wasMasked = 'true';
@@ -1458,7 +1324,7 @@
         const submitLoader = document.getElementById('submitLoader');
         
         const basePayload = { status: 'Pending', email_sent: 'No', first_name: '', last_name: '' };
-        let agreements = []; // Track all checked agreements
+        let agreements = []; 
 
         for(let q of formConfig.questions) {
             if(q.type==='section_header') continue;
@@ -1467,7 +1333,6 @@
             
             let val = q.type==='checkbox_single' ? (el.checked?'Yes':'No') : el.value.trim();
 
-            // Check if this was a masked field that they DID NOT change, restoring the real data
             if (el.dataset && el.dataset.autofilled && val === 'Information on File') {
                 val = el.dataset.autofilled;
             }
@@ -1481,12 +1346,10 @@
             if(q.isCore) {
                 basePayload[q.id] = val; 
             } else if (q.type === 'checkbox_single' && el.checked) {
-                // Collect the labels of any checked agreement boxes
                 agreements.push(q.label);
             }
         }
         
-        // Also capture the dynamically rendered electricity agreement check!
         if (document.getElementById('form_needs_power')?.value === 'Yes' && document.getElementById('powerAgreementCheck')?.checked) {
             agreements.push("Electricity Requirements Acknowledgment");
         }
@@ -1495,7 +1358,6 @@
             agreements.push("Late Application Strike Acknowledgment");
         }
         
-        // Save the tracked array as a clean JSON string to the database
         basePayload.agreements_checked = JSON.stringify(agreements);
 
         btn.disabled = true;
@@ -1526,11 +1388,10 @@
             const { error } = await _supabase.from('vendors').insert(inserts);
             if(error) throw error;
             
-            // Generate visual summary mapping to all selected markets
             generateSummary(selectedIds, basePayload);
 
             switchView('success');
-            if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#0A84FF', '#BF5AF2', '#ffffff'] });
+            if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#0A84FF', '#BF5AF2'] });
         } catch(e) { 
             console.error(e);
             showToast("Submission failed", true); 
@@ -1546,11 +1407,10 @@
     function switchView(v) { document.querySelectorAll('.view').forEach(e => e.classList.remove('active')); document.getElementById(v + 'View').classList.add('active'); window.scrollTo(0,0); }
     function showToast(m, e) { const t = document.getElementById('toast'); t.innerText = m; t.style.background = e ? 'var(--gradient-fire)' : 'var(--gradient-success)'; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 4000); }
     
-    // Upgraded Compression function using browser-image-compression library
     async function compressImage(file) {
         const options = {
-            maxSizeMB: 0.4, // Forces images down to roughly 400KB (perfect for Supabase 50MB limit)
-            maxWidthOrHeight: 1200, // Scales down dimensions while keeping it very readable
+            maxSizeMB: 0.4, 
+            maxWidthOrHeight: 1200, 
             useWebWorker: true,
             initialQuality: 0.7
         };
@@ -1562,7 +1422,6 @@
             return compressedFile;
         } catch (error) {
             console.error("Image compression error:", error);
-            // Fallback to original file if compression fails for some reason
             return file;
         }
     }
