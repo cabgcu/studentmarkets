@@ -244,13 +244,23 @@
         .neon-input::placeholder { color: rgba(255, 255, 255, 0.4); font-weight: 500; }
         .neon-input:focus { border-color: #0A84FF; box-shadow: 0 0 15px rgba(10, 132, 255, 0.4), 0 0 2px rgba(191, 90, 242, 0.4); background: rgba(255,255,255,0.12); transform: scale(1.01); }
 
+        .inline-edit-btn { display: none; background: rgba(10, 132, 255, 0.2); border: 1px solid rgba(10, 132, 255, 0.4); color: #fff; border-radius: 8px; padding: 4px 8px; font-size: 0.85rem; cursor: pointer; margin-right: 10px; transition: 0.2s; vertical-align: middle; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .inline-edit-btn:hover { background: rgba(10, 132, 255, 0.4); transform: scale(1.05); }
+        body.admin-mode-active .inline-edit-btn { display: inline-flex; align-items: center; justify-content: center; }
+        body.admin-mode-active #appDescContainer { display: block !important; }
+
         #step0-status-btn { background: none; border: none; color: var(--text-muted); text-decoration: underline; font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-top: 20px; width: 100%; transition: 0.2s; }
         #step0-status-btn:disabled { opacity: 0.3; text-decoration: none; cursor: not-allowed; }
         #step0-status-btn:hover:not(:disabled) { color: #fff; }
 
         /* Admin / Status Elements styled to V1 */
-        .builder-q-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 16px; margin-bottom: 12px; position: relative;}
-        .builder-q-remove { position: absolute; top: 12px; right: 12px; color: #FF3B30; cursor: pointer; font-weight: bold; background: none; border: none; font-size: 1.2rem; }
+        .builder-q-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 20px; border-radius: 16px; margin-bottom: 16px; position: relative; transition: all 0.2s ease;}
+        .builder-q-card:hover { border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); }
+        .builder-q-remove { color: #FF3B30; cursor: pointer; font-weight: bold; background: rgba(255, 59, 48, 0.1); border: 1px solid rgba(255, 59, 48, 0.2); border-radius: 8px; font-size: 0.85rem; padding: 6px 12px; transition: 0.2s; }
+        .builder-q-remove:hover { background: rgba(255, 59, 48, 0.2); color: #fff; }
+        
+        .admin-grid-2 { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 15px; }
+        @media (min-width: 600px) { .admin-grid-2 { grid-template-columns: 1fr 1fr; } }
         
         .status-market-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 20px; margin-bottom: 16px; transition: all 0.3s ease; }
         .status-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
@@ -309,9 +319,13 @@
                 <!-- STEP 1: Market Selection -->
                 <div class="form-step" id="step-1">
                     <div class="survey-header-center">
-                        <h3 id="appTitle" style="margin-top:0; font-size: 1.5rem; letter-spacing: -0.02em; line-height: 1.2;">Select Market</h3>
-                        <div id="appDesc" style="color: var(--text-muted); margin: 12px auto; line-height: 1.5; font-size: 0.9rem; max-width: 95%;">
-                            Loading available markets...
+                        <h3 style="margin-top:0; font-size: 1.5rem; letter-spacing: -0.02em; line-height: 1.2;">
+                            <button type="button" class="inline-edit-btn" onclick="editFormTitle()" title="Edit Global Form Title">✏️</button>
+                            <span id="appTitle">Select Market</span>
+                        </h3>
+                        <div id="appDescContainer" style="color: var(--text-muted); margin: 12px auto; line-height: 1.5; font-size: 0.9rem; max-width: 95%;">
+                            <button type="button" class="inline-edit-btn" onclick="editFormDesc()" title="Edit Global Form Description">✏️</button>
+                            <span id="appDesc">Loading available markets...</span>
                         </div>
                         <span style="font-size: 0.75rem; color: #FF3B30; font-weight: 700; text-transform: uppercase;">* Indicates required question</span>
                     </div>
@@ -371,33 +385,35 @@
 
     <!-- ADMIN BUILDER VIEW -->
     <div id="adminView" class="view">
-        <div class="frosted survey-card" style="max-width: 900px;">
+        <div class="frosted survey-card" style="max-width: 900px; padding: 30px;">
             <h2 style="margin-top:0; font-size: 1.8rem;">Form Builder Admin</h2>
             <div class="section-header">Global Branding & Text</div>
             <div class="form-group"><label class="form-label">Header Image URL</label><input type="text" id="adminHeaderUrl" class="control-item"></div>
             <div class="form-group"><label class="form-label">Global Form Title</label><input type="text" id="adminEventTitle" class="control-item" placeholder="Leave blank for default"></div>
             <div class="form-group"><label class="form-label">Global Form Description</label><textarea id="adminEventDesc" class="control-item" placeholder="Leave blank for default instructions."></textarea></div>
             
-            <div class="section-header" style="margin-top:30px;">
+            <div class="section-header" style="margin-top:40px; margin-bottom: 20px;">
                 Form Pages & Questions
-                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-left: 10px; text-transform: none;">(Section Headers act as page breaks)</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-left: 10px; text-transform: none;">(Drag structure by ordering, Sections act as page breaks)</span>
             </div>
             
             <div id="adminQuestionsList"></div>
-            <div style="text-align: center; margin-bottom: 20px;">
+            
+            <div style="text-align: center; margin-top: 30px; margin-bottom: 20px;">
                 <button class="btn btn-ghost" style="padding: 12px 24px; font-size: 0.9rem;" onclick="addCustomQuestion('text')">+ Add Question</button>
-                <button class="btn btn-ghost" style="padding: 12px 24px; font-size: 0.9rem;" onclick="addCustomQuestion('section_header')">+ Add Header / Page Break</button>
+                <button class="btn btn-ghost" style="padding: 12px 24px; font-size: 0.9rem; border-color: rgba(191, 90, 242, 0.4); color: #BF5AF2;" onclick="addCustomQuestion('section_header')">+ Add Page Break (Section)</button>
             </div>
+            
             <div class="center-btn-wrapper" style="margin-top: 40px; display:flex; gap: 15px;">
-                <button class="btn btn-ghost" onclick="switchView('application')">Exit</button>
-                <button class="btn btn-primary" id="adminSaveBtn" onclick="saveAdminConfig()">Save Settings</button>
+                <button class="btn btn-ghost" onclick="switchView('application')">Exit Builder</button>
+                <button class="btn btn-primary" id="adminSaveBtn" onclick="saveAdminConfig()">Save Form Settings</button>
             </div>
         </div>
     </div>
 
     <footer>
         © 2026 Canyon Activities Board <br>
-        <button class="btn btn-ghost" style="font-size:0.75rem; padding: 6px 12px; margin-top:12px; border:none; opacity: 0.5;" onclick="showAdminGate()">Admin Access</button>
+        <button id="adminToggleBtn" class="btn btn-ghost" style="font-size:0.75rem; padding: 6px 12px; margin-top:12px; border:none; opacity: 0.5;" onclick="handleAdminToggle()">Admin Access</button>
     </footer>
 </div>
 
@@ -426,6 +442,17 @@
 <div id="toast">Update Successful</div>
 
 <script>
+    // --- UTILITIES ---
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
     // --- VENDOR CONFIRMATION FLOW ENGINE ---
     window.addEventListener('DOMContentLoaded', () => { 
         const urlParams = new URLSearchParams(window.location.search);
@@ -653,7 +680,7 @@
                     descHtml += "<strong>Select one or more markets below to apply:</strong>";
                     
                     document.getElementById('appDesc').innerHTML = descHtml;
-                    document.getElementById('appDesc').style.display = 'block';
+                    document.getElementById('appDescContainer').style.display = 'block';
                     
                     lblMarketSelection.innerHTML = 'Which Markets are you applying for? <span style="text-transform:none; font-weight:normal; font-size:0.85rem; color:var(--text-muted); display:block; margin-top:4px;">Select a market to apply (can apply to multiple)</span><span class="required-mark">*</span>';
                 } else {
@@ -665,9 +692,10 @@
                     let descHtml = specificConfig.description || singleMarket.description || formConfig.eventDesc || "";
                     if (descHtml) {
                         document.getElementById('appDesc').innerHTML = descHtml;
-                        document.getElementById('appDesc').style.display = 'block';
+                        document.getElementById('appDescContainer').style.display = 'block';
                     } else {
-                        document.getElementById('appDesc').style.display = 'none';
+                        document.getElementById('appDesc').innerHTML = ''; // Clear so admin sees empty area
+                        document.getElementById('appDescContainer').style.display = 'none';
                     }
                     
                     lblMarketSelection.innerHTML = 'Which Market are you applying for? <span style="text-transform:none; font-weight:normal; font-size:0.85rem; color:var(--text-muted); display:block; margin-top:4px;">Select the market below to apply</span><span class="required-mark">*</span>';
@@ -781,8 +809,9 @@
             let placeholderAttr = q.id === 'student_id' ? 'placeholder="e.g. 1234567"' : '';
             inputHtml = `<input type="${q.type}" ${common} ${placeholderAttr} autocomplete="off" />`;
         }
+        let editBtn = `<button type="button" class="inline-edit-btn" onclick="editFieldInPlace('${q.id}')" title="Edit Question">✏️</button>`;
         let hintHtml = q.hint && q.type !== 'checkbox_single' ? `<span class="form-hint">${q.hint}</span>` : '';
-        let lbl = `<label class="form-label" id="lbl-form_${q.id}">${q.label}${q.required?'<span class="required-mark">*</span>':''}${hintHtml}</label>`;
+        let lbl = `<label class="form-label" id="lbl-form_${q.id}">${editBtn}${q.label}${q.required?'<span class="required-mark">*</span>':''}${hintHtml}</label>`;
         let htmlString = `<div class="form-group ${q.width === 'half' ? 'half-width' : 'full-width'}">${lbl}${inputHtml}</div>`;
         if (q.id === 'food_license') htmlString += `<div id="foodLicenseUploadSection" class="conditional-section full-width"><label class="form-label">Upload AZ food handlers license!<span class="required-mark">*</span></label><input type="hidden" id="formFoodLicenseLinkHidden"><div id="existingLicenseLink"></div><input type="file" id="formFoodLicenseFile" class="control-item" accept="image/*" /></div>`;
         if (q.id === 'needs_power') htmlString += `<div id="powerAgreementSection" class="conditional-section full-width"><label class="form-label" style="color:#FFD60A">ELECTRICITY VENDORS:<span class="required-mark">*</span></label><p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px;line-height:1.4;">Due to high demand, electricity is available on a first-come, first-served basis. We do not provide extension cords. Portable power is STRONGLY encouraged.</p><label class="custom-checkbox"><input type="checkbox" id="powerAgreementCheck"><span>I acknowledge that I have read this statement</span></label></div>`;
@@ -802,7 +831,8 @@
                 if (currentStepDiv) dynamicStepsContainer.appendChild(currentStepDiv);
                 currentStepDiv = document.createElement('div');
                 currentStepDiv.className = 'form-step';
-                currentStepDiv.innerHTML = `<div class="survey-header-center"><h3 style="margin-top:0; margin-bottom: 15px; font-size: 1.4rem;">${q.label}</h3></div>`;
+                let editBtn = `<button type="button" class="inline-edit-btn" onclick="editFieldInPlace('${q.id}')" title="Edit Section">✏️</button>`;
+                currentStepDiv.innerHTML = `<div class="survey-header-center"><h3 style="margin-top:0; margin-bottom: 15px; font-size: 1.4rem;">${editBtn}${q.label}</h3></div>`;
                 currentGrid = document.createElement('div');
                 currentGrid.className = 'dynamic-form-grid';
                 currentStepDiv.appendChild(currentGrid);
@@ -891,6 +921,9 @@
     }
 
     function validateForm(tabIndex) {
+        // Admin bypass: Skip all validation if admin mode is active
+        if (isAdminUnlocked) return true;
+
         let x = document.getElementsByClassName("form-step")[tabIndex];
         if (x.id === 'step-1') {
             const selected = document.querySelectorAll('input[name="marketChoice"]:checked');
@@ -1219,7 +1252,97 @@
 
     function showAdminGate() { document.getElementById('gateModal').classList.add('show'); }
     function hideAdminGate() { document.getElementById('gateModal').classList.remove('show'); }
-    function verifyAdmin() { if (document.getElementById('adminPass').value === 'Vendor49!') { hideAdminGate(); renderAdminPanel(); switchView('admin'); } else { showToast('Invalid', true); } }
+    
+    let isAdminUnlocked = false;
+    function handleAdminToggle() {
+        if (!isAdminUnlocked) {
+            showAdminGate();
+        } else {
+            renderAdminPanel();
+            switchView('admin');
+        }
+    }
+    
+    function verifyAdmin() { 
+        if (document.getElementById('adminPass').value === 'Vendor49!') { 
+            hideAdminGate(); 
+            isAdminUnlocked = true;
+            document.body.classList.add('admin-mode-active');
+            document.getElementById('adminToggleBtn').innerText = "Open Full Builder";
+            showToast("Admin Unlocked! Click the ✏️ icons to edit questions.", false);
+            
+            // Bypass initial screens and jump straight to the editable questions (Step index 2)
+            let steps = document.getElementsByClassName("form-step");
+            if (steps.length > 2) {
+                currentTab = 2;
+                showTab(currentTab);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        } else { 
+            showToast('Invalid Password', true); 
+        } 
+    }
+
+    async function editFieldInPlace(id) {
+        const qIndex = formConfig.questions.findIndex(q => q.id === id);
+        if(qIndex === -1) return;
+        const q = formConfig.questions[qIndex];
+        
+        const newLabel = prompt("Edit Question Label:", q.label);
+        if (newLabel !== null) {
+            q.label = newLabel.trim();
+            
+            if (q.type !== 'section_header' && q.type !== 'checkbox_single') {
+                const newHint = prompt("Edit Hint Text (Optional):", q.hint || "");
+                if (newHint !== null) q.hint = newHint.trim();
+            } else if (q.type === 'checkbox_single') {
+                const newHint = prompt("Edit Agreement Text:", q.hint || "");
+                if (newHint !== null) q.hint = newHint.trim();
+            }
+            
+            if (q.type === 'dropdown') {
+                const newOpts = prompt("Edit Dropdown Options (comma separated):", q.options || "");
+                if (newOpts !== null) q.options = newOpts.trim();
+            }
+            
+            try { 
+                await _supabase.from('secrets').upsert([{ name: 'MARKET_FORM_CONFIG_V8', value: JSON.stringify(formConfig) }], { onConflict: 'name' }); 
+                renderPublicForm();
+                renderAdminQuestionsList();
+                showToast("Question Updated!", false); 
+            } catch(e) { 
+                showToast("Error saving", true); 
+            }
+        }
+    }
+
+    async function editFormTitle() {
+        const newTitle = prompt("Edit Global Form Title:", formConfig.eventTitle || "");
+        if (newTitle !== null) {
+            formConfig.eventTitle = newTitle.trim();
+            try { 
+                await _supabase.from('secrets').upsert([{ name: 'MARKET_FORM_CONFIG_V8', value: JSON.stringify(formConfig) }], { onConflict: 'name' }); 
+                loadEvents();
+                showToast("Form Title Updated!", false); 
+            } catch(e) { 
+                showToast("Error saving", true); 
+            }
+        }
+    }
+
+    async function editFormDesc() {
+        const newDesc = prompt("Edit Global Form Description:", formConfig.eventDesc || "");
+        if (newDesc !== null) {
+            formConfig.eventDesc = newDesc.trim();
+            try { 
+                await _supabase.from('secrets').upsert([{ name: 'MARKET_FORM_CONFIG_V8', value: JSON.stringify(formConfig) }], { onConflict: 'name' }); 
+                loadEvents(); 
+                showToast("Form Description Updated!", false); 
+            } catch(e) { 
+                showToast("Error saving", true); 
+            }
+        }
+    }
     
     function renderAdminPanel() { 
         document.getElementById('adminHeaderUrl').value = formConfig.headerUrl || ''; 
@@ -1230,49 +1353,153 @@
     
     function renderAdminQuestionsList() {
         const list = document.getElementById('adminQuestionsList');
-        list.innerHTML = formConfig.questions.map((q, i) => `
-            <div class="builder-q-card">
-                <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
-                    <div style="display:flex;gap:5px">
-                        <button class="btn btn-ghost" style="padding:4px 8px; min-width:auto; font-size:12px;" onclick="moveQ(${i},-1)">↑</button>
-                        <button class="btn btn-ghost" style="padding:4px 8px; min-width:auto; font-size:12px;" onclick="moveQ(${i},1)">↓</button>
+        list.innerHTML = formConfig.questions.map((q, i) => {
+            // Protected fields that shouldn't be deleted or heavily mutated
+            const isProtected = q.id === 'student_id' || q.id === 'full_name_combined';
+            const borderColor = q.type === 'section_header' ? '#BF5AF2' : '#0A84FF';
+
+            return `
+            <div class="builder-q-card" style="border-left: 4px solid ${borderColor};">
+                
+                <!-- Card Header -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <button class="btn btn-ghost" style="padding:4px 10px; min-width:auto; font-size:12px; border-radius: 8px;" onclick="moveQ(${i},-1)" ${i===0?'disabled':''}>▲</button>
+                        <button class="btn btn-ghost" style="padding:4px 10px; min-width:auto; font-size:12px; border-radius: 8px;" onclick="moveQ(${i},1)" ${i===formConfig.questions.length-1?'disabled':''}>▼</button>
+                        <span style="font-weight:800; margin-left:10px; color:#fff; font-size: 0.95rem;">Field ${i+1}</span>
                     </div>
-                    <button class="builder-q-remove" onclick="deleteQ(${i})">&times;</button>
+                    ${!isProtected ? `<button class="builder-q-remove" onclick="deleteQ(${i})">🗑️ Remove</button>` : `<span style="color:#a1a1aa; font-size: 0.75rem; font-style: italic; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px;">Protected Core Field</span>`}
                 </div>
-                <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">Type</label>
-                <select class="control-item" style="margin-bottom:12px;" onchange="updateQ(${i}, 'type', this.value)">
-                    <option value="text" ${q.type==='text'?'selected':''}>Short Text</option>
-                    <option value="textarea" ${q.type==='textarea'?'selected':''}>Paragraph</option>
-                    <option value="email" ${q.type==='email'?'selected':''}>Email</option>
-                    <option value="tel" ${q.type==='tel'?'selected':''}>Phone</option>
-                    <option value="number" ${q.type==='number'?'selected':''}>Number</option>
-                    <option value="dropdown" ${q.type==='dropdown'?'selected':''}>Dropdown</option>
-                    <option value="checkbox_single" ${q.type==='checkbox_single'?'selected':''}>Agreement</option>
-                    <option value="section_header" ${q.type==='section_header'?'selected':''}>Header</option>
-                </select>
-                <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">Label</label>
-                <input type="text" class="control-item" style="margin-bottom:12px;" value="${q.label}" onchange="updateQ(${i},'label',this.value)">
-                ${q.type !== 'section_header' ? `
-                    <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">Hint</label>
-                    <input type="text" class="control-item" style="margin-bottom:12px;" value="${q.hint || ''}" onchange="updateQ(${i},'hint',this.value)">
+
+                <!-- Setup Grid (Type & Width/Required) -->
+                <div class="admin-grid-2">
+                    <div>
+                        <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:6px; text-transform: uppercase; font-weight: 700;">Field Type</label>
+                        <select class="control-item" style="padding:12px; border-color: rgba(255,255,255,0.1);" onchange="updateQ(${i}, 'type', this.value)" ${isProtected ? 'disabled' : ''}>
+                            <option value="text" ${q.type==='text'?'selected':''}>Short Text</option>
+                            <option value="textarea" ${q.type==='textarea'?'selected':''}>Paragraph Text</option>
+                            <option value="email" ${q.type==='email'?'selected':''}>Email Address</option>
+                            <option value="tel" ${q.type==='tel'?'selected':''}>Phone Number</option>
+                            <option value="number" ${q.type==='number'?'selected':''}>Number</option>
+                            <option value="dropdown" ${q.type==='dropdown'?'selected':''}>Dropdown Menu</option>
+                            <option value="checkbox_single" ${q.type==='checkbox_single'?'selected':''}>Single Checkbox / Agreement</option>
+                            <option value="section_header" ${q.type==='section_header'?'selected':''}>Section Header (Page Break)</option>
+                        </select>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; justify-content: flex-end; gap: 12px;">
+                        ${q.type !== 'section_header' ? `
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <input type="checkbox" id="req_${i}" ${q.required?'checked':''} onchange="updateQ(${i}, 'required', this.checked)" ${isProtected && q.required ? 'disabled' : ''} style="width:20px; height:20px; accent-color: #0A84FF; cursor:pointer;">
+                                <label for="req_${i}" style="font-size:0.9rem; color:#fff; font-weight: 600; cursor:pointer;">Required Question</label>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <label style="font-size:0.85rem; color:var(--text-muted); font-weight:700;">Width:</label>
+                                <select class="control-item" style="padding:8px 12px; font-size: 0.85rem; width: auto; flex: 1; border-color: rgba(255,255,255,0.1);" onchange="updateQ(${i}, 'width', this.value)">
+                                    <option value="full" ${q.width==='full'?'selected':''}>Full Width (100%)</option>
+                                    <option value="half" ${q.width==='half'?'selected':''}>Half Width (50%)</option>
+                                </select>
+                            </div>
+                        ` : `
+                            <div style="color:#BF5AF2; font-size:0.85rem; font-weight:800; background: rgba(191, 90, 242, 0.1); padding: 12px; border-radius: 12px; border: 1px solid rgba(191, 90, 242, 0.2);">
+                                📝 Acts as a Page Break
+                            </div>
+                        `}
+                    </div>
+                </div>
+
+                <!-- Text Labels -->
+                <div style="margin-top:20px;">
+                    <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:6px; text-transform: uppercase; font-weight: 700;">${q.type === 'section_header' ? 'Header Title Text' : 'Main Question Label'}</label>
+                    <input type="text" class="control-item" style="padding:12px; font-weight: 600;" value="${escapeHtml(q.label)}" onchange="updateQ(${i},'label',this.value)">
+                </div>
+
+                ${q.type !== 'section_header' && q.type !== 'checkbox_single' ? `
+                    <div style="margin-top:15px;">
+                        <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:6px; text-transform: uppercase; font-weight: 700;">Hint Text (Optional)</label>
+                        <input type="text" class="control-item" style="padding:12px; color: #a1a1aa; font-size: 0.9rem;" value="${escapeHtml(q.hint || '')}" placeholder="e.g. Please enter your valid GCU email..." onchange="updateQ(${i},'hint',this.value)">
+                    </div>
                 ` : ''}
-            </div>`).join('');
+
+                ${q.type === 'checkbox_single' ? `
+                    <div style="margin-top:15px;">
+                        <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:6px; text-transform: uppercase; font-weight: 700;">Agreement Text</label>
+                        <textarea class="control-item" style="padding:12px; min-height: 80px; font-size: 0.9rem;" placeholder="I acknowledge that..." onchange="updateQ(${i},'hint',this.value)">${escapeHtml(q.hint || '')}</textarea>
+                    </div>
+                ` : ''}
+
+                ${q.type === 'dropdown' ? `
+                    <div style="margin-top:20px; background: rgba(10, 132, 255, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(10, 132, 255, 0.2);">
+                        <label style="font-size:0.75rem; color:#0A84FF; font-weight:800; text-transform: uppercase; display:block; margin-bottom:8px;">Dropdown Options (Comma Separated)</label>
+                        <input type="text" class="control-item" style="padding:12px; border-color: rgba(10,132,255,0.4);" value="${escapeHtml(q.options || '')}" placeholder="Option 1, Option 2, Option 3" onchange="updateQ(${i},'options',this.value)">
+                    </div>
+                ` : ''}
+
+                <div style="margin-top:15px; font-size:0.7rem; color:rgba(255,255,255,0.2); text-align:right; font-family: monospace;">ID: ${q.id}</div>
+            </div>`;
+        }).join('');
     }
-    function addCustomQuestion(t) { formConfig.questions.push({ id: 'q_'+Date.now(), type: t==='section_header'?'section_header':'text', label: 'New Item', width: 'full', required: false, isCore: false }); renderAdminQuestionsList(); }
-    function deleteQ(i) { formConfig.questions.splice(i, 1); renderAdminQuestionsList(); }
-    function moveQ(i, d) { let n=i+d; if(n<0||n>=formConfig.questions.length)return; [formConfig.questions[i],formConfig.questions[n]]=[formConfig.questions[n],formConfig.questions[i]]; renderAdminQuestionsList(); }
-    function updateQ(i,k,v) { formConfig.questions[i][k]=v; if (k === 'type') renderAdminQuestionsList(); }
+    
+    function addCustomQuestion(t) { 
+        formConfig.questions.push({ 
+            id: 'q_'+Date.now(), 
+            type: t === 'section_header' ? 'section_header' : 'text', 
+            label: t === 'section_header' ? 'New Section' : 'New Question', 
+            width: 'full', 
+            required: false, 
+            isCore: false,
+            options: t === 'dropdown' ? 'Option 1, Option 2' : ''
+        }); 
+        renderAdminQuestionsList(); 
+        
+        // Scroll to the bottom to see the new question
+        setTimeout(() => {
+            const list = document.getElementById('adminQuestionsList');
+            if(list) list.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+    }
+    
+    function deleteQ(i) { 
+        if(confirm("Are you sure you want to remove this field?")) {
+            formConfig.questions.splice(i, 1); 
+            renderAdminQuestionsList(); 
+        }
+    }
+    
+    function moveQ(i, d) { 
+        let n=i+d; 
+        if(n<0||n>=formConfig.questions.length) return; 
+        [formConfig.questions[i],formConfig.questions[n]]=[formConfig.questions[n],formConfig.questions[i]]; 
+        renderAdminQuestionsList(); 
+    }
+    
+    function updateQ(i, k, v) { 
+        formConfig.questions[i][k] = v; 
+        // Re-render only if type changes to show/hide specific options (like dropdown options)
+        if (k === 'type') {
+            if(v === 'dropdown' && !formConfig.questions[i].options) formConfig.questions[i].options = 'Option 1, Option 2';
+            renderAdminQuestionsList(); 
+        }
+    }
     
     async function saveAdminConfig() { 
         formConfig.headerUrl = document.getElementById('adminHeaderUrl').value;
         formConfig.eventTitle = document.getElementById('adminEventTitle').value;
         formConfig.eventDesc = document.getElementById('adminEventDesc').value;
+        
+        const btn = document.getElementById('adminSaveBtn');
+        const origText = btn.innerText;
+        btn.innerText = "Saving...";
+        btn.disabled = true;
+
         try { 
             await _supabase.from('secrets').upsert([{ name: 'MARKET_FORM_CONFIG_V8', value: JSON.stringify(formConfig) }], { onConflict: 'name' }); 
-            showToast("Saved", false); 
-            setTimeout(() => window.location.reload(), 1000); 
+            showToast("Settings Saved Successfully", false); 
+            setTimeout(() => window.location.reload(), 1500); 
         } catch(e){ 
-            showToast("Error",true); 
+            showToast("Error saving config",true); 
+            btn.innerText = origText;
+            btn.disabled = false;
         } 
     }
 
