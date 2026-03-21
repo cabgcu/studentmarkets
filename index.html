@@ -1302,9 +1302,31 @@
             submitBtnText.innerText = "Saving Application...";
             basePayload.additional_comments = document.getElementById('form_additional_comments')?.value.trim() || '';
             
-            const inserts = selectedIds.map(id => ({ ...basePayload, event_id: id }));
-            const { error } = await _supabase.from('vendors').insert(inserts);
-            if(error) throw error;
+            // Look up existing applications for this student in the selected markets
+            const { data: existingApps } = await _supabase.from('vendors')
+                .select('id, event_id')
+                .eq('student_id', basePayload.student_id)
+                .in('event_id', selectedIds);
+                
+            const existingMap = {};
+            if (existingApps) {
+                existingApps.forEach(app => existingMap[app.event_id] = app.id);
+            }
+            
+            // Process each selected market (Insert if new, Update if exists)
+            for (const eventId of selectedIds) {
+                const payload = { ...basePayload, event_id: eventId };
+                
+                if (existingMap[eventId]) {
+                    // Overwrite existing application
+                    const { error } = await _supabase.from('vendors').update(payload).eq('id', existingMap[eventId]);
+                    if (error) throw error;
+                } else {
+                    // Insert new application
+                    const { error } = await _supabase.from('vendors').insert([payload]);
+                    if (error) throw error;
+                }
+            }
             
             generateSummary(selectedIds, basePayload);
 
