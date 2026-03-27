@@ -1249,9 +1249,11 @@
                 basePayload.last_name = parts.slice(1).join(' ') || '.';
             }
 
-            if(q.isCore) {
-                basePayload[q.id] = val;
-            } else if (q.type === 'checkbox_single' && el.checked) {
+            // Save ALL question answers to database (including custom questions from form builder)
+            basePayload[q.id] = val;
+
+            // Also track non-core checkboxes in agreements array
+            if (q.type === 'checkbox_single' && !q.isCore && el.checked) {
                 agreements.push(q.label);
             }
         }
