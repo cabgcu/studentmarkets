@@ -1231,8 +1231,9 @@
 
         const basePayload = { status: 'Pending', email_sent: 'No', first_name: '', last_name: '' };
         let agreements = [];
+        let customAnswers = {};
 
-        // Fields that exist as columns in the vendors table
+        // Standard database columns (don't change without updating DB schema)
         const dbColumns = new Set(['student_id', 'first_name', 'last_name', 'preferred_email', 'gcu_email', 'phone',
                                    'communication_method', 'year', 'availability', 'food_license', 'past_vendor',
                                    'description', 'link', 'needs_power', 'food_license_link', 'additional_comments']);
@@ -1261,10 +1262,19 @@
                     agreements.push(q.label);
                 }
             }
-            // Save to database only if field exists as a column
+            // Save to normal DB columns if field exists there
             else if (dbColumns.has(q.id)) {
                 basePayload[q.id] = val;
             }
+            // Save custom questions to JSON field (allows unlimited custom questions)
+            else {
+                customAnswers[q.id] = val;
+            }
+        }
+
+        // Store custom answers as JSON string
+        if (Object.keys(customAnswers).length > 0) {
+            basePayload.custom_answers = JSON.stringify(customAnswers);
         }
 
         if (document.getElementById('form_needs_power')?.value === 'Yes' && document.getElementById('powerAgreementCheck')?.checked) {
