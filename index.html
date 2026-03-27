@@ -505,9 +505,15 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const confirmId = urlParams.get('confirm');
+        const confirmPowerId = urlParams.get('confirm_power');
+        const declinePowerId = urlParams.get('decline_power');
 
         if (confirmId) {
             handleVendorConfirmation(confirmId);
+        } else if (confirmPowerId) {
+            handlePowerConfirmation(confirmPowerId, 'confirm');
+        } else if (declinePowerId) {
+            handlePowerConfirmation(declinePowerId, 'decline');
         }
     });
 
@@ -579,6 +585,51 @@
                     <div style="font-size: 4rem; color: #FF3B30; margin-bottom: 20px;">✕</div>
                     <h2 style="color:#FF3B30; font-weight:800; margin-bottom:10px;">System Error</h2>
                     <p style="color:#a1a1aa; text-align:center; max-width: 400px;">${err.message || 'We could not process your confirmation automatically. Please reply directly to the email to confirm your attendance.'}</p>
+                `;
+            }
+        }
+    }
+
+    async function handlePowerConfirmation(id, action) {
+        try {
+            const mainApp = document.getElementById('mainAppContainer');
+            if (mainApp) mainApp.style.display = 'none';
+
+            const isConfirming = action === 'confirm';
+            const accentColor = isConfirming ? '#0A84FF' : '#FF9500';
+
+            const msgDiv = document.createElement('div');
+            msgDiv.id = 'confirmation-loading-screen';
+            msgDiv.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#050505; color:white; font-family:var(--font-stack); z-index:999999;";
+            msgDiv.innerHTML = `<div class="spinner" style="margin-bottom:20px; width:40px; height:40px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.2); border-top-color: ${accentColor}; animation: spin 1s linear infinite;"></div><h2 style="font-weight:800;">${isConfirming ? 'Confirming power request...' : 'Updating power status...'}</h2>
+            <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>`;
+            document.body.appendChild(msgDiv);
+
+            const apiType = isConfirming ? 'SM_CONFIRM_POWER' : 'SM_DECLINE_POWER';
+            await apiCall(apiType, { vendorId: id });
+
+            if (isConfirming) {
+                msgDiv.innerHTML = `
+                    <div style="font-size: 5rem; color: #0A84FF; margin-bottom: 20px; text-shadow: 0 0 30px rgba(10, 132, 255, 0.4);">⚡</div>
+                    <h2 style="color:#0A84FF; margin-bottom: 15px; font-weight:800; font-size:2.2rem;">Power Confirmed!</h2>
+                    <p style="color:var(--text-muted); font-size:1.1rem; max-width:400px; text-align:center;">Your power request has been confirmed. Please remember to bring your own extension cords to the market!</p>
+                `;
+            } else {
+                msgDiv.innerHTML = `
+                    <div style="font-size: 5rem; color: #FF9500; margin-bottom: 20px; text-shadow: 0 0 30px rgba(255, 149, 0, 0.4);">🔌</div>
+                    <h2 style="color:#FF9500; margin-bottom: 15px; font-weight:800; font-size:2.2rem;">Power Released</h2>
+                    <p style="color:var(--text-muted); font-size:1.1rem; max-width:400px; text-align:center;">Your power spot has been released. You're still confirmed for the market — just without a power source. Thank you for letting us know!</p>
+                `;
+            }
+
+        } catch (err) {
+            console.error("Power Confirmation Error:", err);
+            const errDiv = document.getElementById('confirmation-loading-screen');
+            if (errDiv) {
+                errDiv.innerHTML = `
+                    <div style="font-size: 4rem; color: #FF3B30; margin-bottom: 20px;">✕</div>
+                    <h2 style="color:#FF3B30; font-weight:800; margin-bottom:10px;">System Error</h2>
+                    <p style="color:#a1a1aa; text-align:center; max-width: 400px;">${err.message || 'We could not process your power status. Please reply directly to the email to update us.'}</p>
                 `;
             }
         }
