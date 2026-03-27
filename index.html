@@ -7,8 +7,7 @@
     
     <!-- Dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Powerful Image Compression Library -->
+    <!-- Image Compression Library (client-side before sending to vendoradmin) -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js"></script>
 
     <style>
@@ -386,6 +385,58 @@
 <div id="toast">Update Successful</div>
 
 <script>
+    // ========================================================
+    // STUDENT MARKETS PUBLIC FORM - API CLIENT
+    // ========================================================
+    // This form delegates ALL data operations to vendoradmin
+    // via postMessage API through a hidden iframe.
+    // No direct Supabase access - vendoradmin is the backend.
+    // ========================================================
+
+    // --- Configuration ---
+    const VENDORADMIN_URL = window.location.origin.includes('github.io')
+        ? window.location.origin.replace('/studentmarkets', '/vendoradmin') + '/'
+        : 'http://localhost:8000'; // Fallback for development
+
+    // --- API Bridge ---
+    let _apiBridge = null;
+    let _apiReady = false;
+    let _apiCallbacks = {};
+
+    async function initApiBridge() {
+        return new Promise((resolve) => {
+            _apiBridge = document.createElement('iframe');
+            _apiBridge.src = VENDORADMIN_URL;
+            _apiBridge.style.display = 'none';
+            _apiBridge.onload = () => { _apiReady = true; resolve(); };
+            document.body.appendChild(_apiBridge);
+
+            window.addEventListener('message', (e) => {
+                const { type, requestId, result, error } = e.data || {};
+                if (!type || !type.endsWith('_RESP')) return;
+                if (_apiCallbacks[requestId]) {
+                    if (error) _apiCallbacks[requestId].reject(new Error(error));
+                    else _apiCallbacks[requestId].resolve(result);
+                    delete _apiCallbacks[requestId];
+                }
+            });
+        });
+    }
+
+    function apiCall(type, payload = {}) {
+        return new Promise((resolve, reject) => {
+            const requestId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2, 12);
+            _apiCallbacks[requestId] = { resolve, reject };
+            _apiBridge.contentWindow.postMessage({ type, requestId, payload }, '*');
+            setTimeout(() => {
+                if (_apiCallbacks[requestId]) {
+                    delete _apiCallbacks[requestId];
+                    reject(new Error('API timeout'));
+                }
+            }, 30000);
+        });
+    }
+
     // --- UTILITIES ---
     function escapeHtml(str) {
         if (!str) return '';
@@ -398,10 +449,11 @@
     }
 
     // --- VENDOR CONFIRMATION FLOW ENGINE ---
-    window.addEventListener('DOMContentLoaded', () => { 
+    window.addEventListener('DOMContentLoaded', async () => {
+        await initApiBridge();
         const urlParams = new URLSearchParams(window.location.search);
         const confirmId = urlParams.get('confirm');
-        
+
         if (confirmId) {
             handleVendorConfirmation(confirmId);
         }
@@ -451,24 +503,22 @@
         try {
             const mainApp = document.getElementById('mainAppContainer');
             if (mainApp) mainApp.style.display = 'none';
-            
+
             const msgDiv = document.createElement('div');
             msgDiv.id = 'confirmation-loading-screen';
             msgDiv.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#050505; color:white; font-family:var(--font-stack); z-index:999999;";
-            msgDiv.innerHTML = `<div class="spinner" style="margin-bottom:20px; width:40px; height:40px; border-top-color:#34C759; border-radius: 50%; border: 3px solid rgba(255,255,255,0.2); border-top-color: #34C759; animation: spin 1s linear infinite;"></div><h2 style="font-weight:800;">Confirming your attendance...</h2>
+            msgDiv.innerHTML = `<div class="spinner" style="margin-bottom:20px; width:40px; height:40px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.2); border-top-color: #34C759; animation: spin 1s linear infinite;"></div><h2 style="font-weight:800;">Confirming your attendance...</h2>
             <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>`;
             document.body.appendChild(msgDiv);
-            
-            const { error } = await _supabase.from('vendors').update({ attendance_confirmed: true }).eq('id', id);
-            
-            if (error) throw error;
-            
+
+            await apiCall('SM_CONFIRM_ATTENDANCE', { vendorId: id });
+
             msgDiv.innerHTML = `
                 <div style="font-size: 5rem; color: #34C759; margin-bottom: 20px; text-shadow: 0 0 30px rgba(52, 199, 89, 0.4);">✓</div>
                 <h2 style="color:#34C759; margin-bottom: 15px; font-weight:800; font-size:2.5rem;">Confirmed!</h2>
                 <p style="color:var(--text-muted); font-size:1.1rem; max-width:400px; text-align:center;">Your attendance has been successfully recorded. We look forward to seeing you at the market!</p>
             `;
-            
+
         } catch (err) {
             console.error("Confirmation Error:", err);
             const errDiv = document.getElementById('confirmation-loading-screen');
@@ -482,26 +532,12 @@
         }
     }
 
-    function processImageUrl(url) {
-        if (!url) return "";
-        if (url.includes('drive.google.com')) {
-            const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-            if (match && match[1]) {
-                return `https://lh3.googleusercontent.com/d/${match[1]}`;
-            }
-        }
-        return url;
-    }
-
-    const SUPABASE_URL = 'https://xdfbjusrwbxoxbcocxkp.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_ylaFmuuSPD2UcKdF1yKw4g_UPXiRRef';
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
     let allEventsData = [];
     let currentTab = 0;
     let isNavigating = false;
     let isAppClosed = false;
-    let marketConfigV3 = {}; 
+    let marketConfigV3 = {};
+    let formConfig = {}; 
 
     const defaultQuestions = [
         { id: 'section_personal', type: 'section_header', label: 'Personal Information', width: 'full', isCore: true },
@@ -574,16 +610,16 @@
 
     async function loadEvents() {
         try {
-            const { data, error } = await _supabase.from('events').select('*').order('created_at', { ascending: false });
+            const data = await apiCall('SM_LOAD_EVENTS');
             const container = document.getElementById('marketSelectionContainer');
             const lblMarketSelection = document.getElementById('lbl-market-selection');
-            
-            if (error || !data || data.length === 0) {
+
+            if (!data || data.length === 0) {
                 isAppClosed = true;
                 updateClosedUI("There are currently no active application windows.");
                 return;
             }
-            
+
             allEventsData = data;
             const now = new Date();
             
@@ -704,38 +740,15 @@
     }
 
     async function loadConfig() {
-        let v8HasText = false;
         try {
-            const { data: v8Data } = await _supabase.from('secrets').select('value').eq('name', 'MARKET_FORM_CONFIG_V8').maybeSingle();
-            if (v8Data?.value) {
-                let p = JSON.parse(v8Data.value);
-                formConfig.headerUrl = p.headerUrl || formConfig.headerUrl;
-                if (formConfig.headerUrl.includes("imgur.com") || formConfig.headerUrl.includes("export=view")) {
-                    formConfig.headerUrl = "https://lh3.googleusercontent.com/d/177iu9igWGiUkD8vdJhZn80PXgLa6hM3c";
-                }
-                formConfig.questions = p.questions || JSON.parse(JSON.stringify(defaultQuestions));
-                if (p.hasOwnProperty('eventTitle')) { formConfig.eventTitle = p.eventTitle; v8HasText = true; }
-                if (p.hasOwnProperty('eventDesc')) { formConfig.eventDesc = p.eventDesc; v8HasText = true; }
-            } else {
-                formConfig.questions = JSON.parse(JSON.stringify(defaultQuestions));
-            }
-
-            const { data: v3Data } = await _supabase.from('secrets').select('value').eq('name', 'MARKET_FORM_CONFIG_V3').maybeSingle();
-            if (v3Data?.value) {
-                try { marketConfigV3 = JSON.parse(v3Data.value); } catch(e){}
-                formConfig.forceStatus = marketConfigV3.forceStatus || 'auto';
-                if (!v8HasText) {
-                    formConfig.eventTitle = marketConfigV3.title || null;
-                    formConfig.eventDesc = marketConfigV3.description || null;
-                }
-            } else {
-                formConfig.forceStatus = 'auto';
-            }
+            const cfg = await apiCall('SM_LOAD_CONFIG');
+            formConfig = cfg;
+            marketConfigV3 = cfg.marketConfigV3 || {};
             renderPublicForm();
-        } catch (e) { 
-            formConfig.questions = JSON.parse(JSON.stringify(defaultQuestions)); 
-            formConfig.forceStatus = 'auto';
-            renderPublicForm(); 
+        } catch (e) {
+            console.error("Failed to load config:", e);
+            formConfig = { headerUrl: "https://lh3.googleusercontent.com/d/177iu9igWGiUkD8vdJhZn80PXgLa6hM3c", questions: JSON.parse(JSON.stringify(defaultQuestions)), forceStatus: 'auto' };
+            renderPublicForm();
         }
     }
 
@@ -1021,19 +1034,16 @@
         btn.disabled = true;
 
         try {
-            if (allEventsData.length === 0) {
-                const { data } = await _supabase.from('events').select('*');
-                if (data) allEventsData = data;
+            const { apps, events } = await apiCall('SM_CHECK_STATUS', { studentId: id });
+            if (!apps || apps.length === 0) {
+                showToast("No records found for this ID.", true);
+                btn.innerText = origText;
+                btn.disabled = false;
+                return;
             }
             const now = new Date();
             now.setHours(0,0,0,0);
-            const upcomingEvents = allEventsData.filter(e => new Date(e.market_date + 'T00:00:00') >= now);
-            const { data: apps } = await _supabase.from('vendors').select('*').eq('student_id', id).order('created_at', { ascending: false });
-
-            if (!apps || apps.length === 0) {
-                showToast("No records found for this ID.", true);
-                return;
-            }
+            const upcomingEvents = events.filter(e => new Date(e.market_date + 'T00:00:00') >= now);
 
             const matchedApps = apps.map(app => {
                 const event = upcomingEvents.find(ev => ev.id === app.event_id);
@@ -1102,141 +1112,23 @@
         btn.disabled = true;
 
         try {
-            const { data: secrets } = await _supabase.from('secrets').select('*');
-            const apiKey = secrets.find(s => s.name === 'BREVO_API_KEY')?.value;
-            if(!apiKey) throw new Error("API Key missing");
-
-            const publicUrlConfig = secrets.find(s => s.name === 'PUBLIC_APP_URL')?.value;
-
-            const { data: vendor } = await _supabase.from('vendors').select('*').eq('id', appId).single();
-            const { data: event } = await _supabase.from('events').select('*').eq('id', eventId).single();
-
-            let subj = '', body = '';
-            
-            let targetTemplate = vendor.email_sent;
-            const isApproved = vendor.status === 'Approved' || vendor.status === 'Checked In';
-
-            if (!targetTemplate || targetTemplate === 'Yes' || targetTemplate === 'No') {
-                if (isApproved) {
-                    targetTemplate = vendor.needs_power === 'Yes' ? 'power' : 'approved';
-                } else {
-                    targetTemplate = 'denied';
-                }
-            }
-
-            if (targetTemplate === 'approved') {
-                subj = event.template_approved_subject; body = event.template_approved_body;
-            } else if (targetTemplate === 'power') {
-                subj = event.template_power_subject || event.template_approved_subject; 
-                body = event.template_power_body || event.template_approved_body;
-            } else if (targetTemplate === 'power_denied') {
-                subj = event.template_power_denied_subject || event.template_approved_subject; 
-                body = event.template_power_denied_body || event.template_approved_body;
-            } else if (targetTemplate === 'denied') {
-                subj = event.template_denied_subject; body = event.template_denied_body;
-            }
-
-            if (['approved', 'power', 'power_denied'].includes(targetTemplate)) {
-                if (body && !body.includes('{{CONFIRM_LINK}}')) {
-                    body += "\n\n**Please click a link below to confirm your status by {{CONFIRM_DEADLINE}}:**\n{{CONFIRM_LINK}}\n{{DECLINE_LINK}}";
-                }
-            }
-
-            let baseUrl = publicUrlConfig || window.location.href.split('?')[0].split('#')[0];
-            if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
-            if (baseUrl && !baseUrl.startsWith('http')) baseUrl = 'https://' + baseUrl;
-            const confirmUrl = `${baseUrl}?confirm=${vendor.id}`;
-            const declineUrl = `${baseUrl}?decline=${vendor.id}`;
-            const finalConfirmLink = `<a href="${confirmUrl}" style="display:inline-block; padding:12px 24px; background-color:#34C759; color:#ffffff; text-decoration:none; font-weight:bold; border-radius:8px; margin: 10px 5px 10px 0;">✓ Confirm Attendance</a>`;
-            const finalDeclineLink = `<a href="${declineUrl}" style="display:inline-block; padding:12px 24px; background-color:#FF3B30; color:#ffffff; text-decoration:none; font-weight:bold; border-radius:8px; margin: 10px 0;">✕ Can't Make It</a>`;
-
-            const formatDate = (dStr) => dStr ? new Date(dStr + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '';
-            const formatDateTime = (dtStr) => dtStr ? new Date(dtStr).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) + ' at ' + new Date(dtStr).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
-
-            let rawBody = (body || '').replace(/\{\{FIRST\}\}/g, vendor.first_name)
-                              .replace(/\{\{MARKET_NAME\}\}/g, event.name)
-                              .replace(/\{\{LOCATION\}\}/g, event.location)
-                              .replace(/\{\{MARKET_DATE\}\}/g, formatDate(event.market_date))
-                              .replace(/\{\{MARKET_TIME\}\}/g, event.market_time || 'TBD')
-                              .replace(/\{\{APP_OPENS\}\}/g, formatDateTime(event.app_open))
-                              .replace(/\{\{APP_CLOSES\}\}/g, formatDateTime(event.app_close))
-                              .replace(/\{\{CONTACT_DATE\}\}/g, formatDate(event.contact_date))
-                              .replace(/\{\{CONFIRM_DEADLINE\}\}/g, formatDate(event.confirm_date))
-                              .replace(/\{\{CONFIRM_LINK\}\}/g, finalConfirmLink)
-                              .replace(/\{\{DECLINE_LINK\}\}/g, finalDeclineLink)
-                              .replace(/\{\{EVENT\}\}/g, event.name);
-
-            let plainTextStr = rawBody.replace(/\*\*(.*?)\*\*/g, '$1');
-            plainTextStr = plainTextStr.replace(finalConfirmLink, `\n\nConfirm Attendance Here: ${confirmUrl}\n`);
-            plainTextStr = plainTextStr.replace(finalDeclineLink, `\nDecline/Cancel Spot Here: ${declineUrl}\n`);
-
-            const htmlBodyText = rawBody.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
-            const parsedSubj = (subj || '').replace(/\{\{FIRST\}\}/g, vendor.first_name).replace(/\{\{MARKET_NAME\}\}/g, event.name).replace(/\{\{EVENT\}\}/g, event.name);
-
-            const bannerUrl = processImageUrl(event.banner_url || "");
-            const headingText = event.heading_text || "Market Status Update";
-            const statusColor = isApproved ? '#34C759' : '#FF3B30';
-            const statusBadgeText = isApproved ? 'APPROVED' : 'STATUS UPDATE';
-
-            const barcodeData = vendor.student_id || vendor.id.substring(0,8);
-            const qrHtml = isApproved ? `
-                <tr><td style="padding: 0 15px; background-color: #ffffff;"><div style="border-top: 2px dashed #e5e7eb; width: 100%; height: 1px;"></div></td></tr>
-                <tr><td align="center" style="padding: 40px 30px; background-color: #ffffff;">
-                    <table border="0" cellspacing="0" cellpadding="0" width="100%">
-                        <tr><td align="center" style="background: #ffffff; padding: 25px; border-radius: 16px; border: 2px solid #eeeeee;">
-                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${barcodeData}&format=png&bgcolor=FFFFFF&color=000000&margin=10" alt="Ticket QR Code" width="250" style="display: block; margin: 0 auto; max-width: 100%; border: 0;">
-                        </td></tr>
-                    </table>
-                    <p style="margin: 25px 0 0 0; font-size: 14px; color: #1a1a1a; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; font-family: sans-serif;">SCAN AT CHECK-IN</p>
-                    <p style="margin: 8px 0 0 0; font-size: 12px; color: #888888; font-family: monospace;">ID: #${String(barcodeData).toUpperCase()}</p>
-                </td></tr>` : '';
-
-            const fullHtmlContent = `
-            <!DOCTYPE html>
-            <html lang="en">
-            <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-            <body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: 'Segoe UI', Arial, sans-serif;">
-                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f3f4f6; padding: 20px;">
-                    <tr><td align="center">
-                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                            ${bannerUrl ? `<tr><td align="center" style="padding: 0;"><img src="${bannerUrl}" width="600" style="display: block; width: 100%; max-width: 100%; height: auto; border: 0;"></td></tr>` : ""}
-                            <tr><td align="center" style="background-color: #ffffff; padding: 40px 30px 20px 30px;">
-                                <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #111; text-transform: uppercase;">${headingText}</h1>
-                                <p style="margin: 12px 0 0 0; font-size: 12px; font-weight: 700; color: #fff; background-color: ${statusColor}; display: inline-block; padding: 6px 16px; text-transform: uppercase; letter-spacing: 1px; border-radius: 20px;">${statusBadgeText}</p>
-                            </td></tr>
-                            <tr><td style="padding: 10px 40px 40px 40px; background-color: #ffffff; font-size: 16px; color: #333; line-height: 1.6;">${htmlBodyText}</td></tr>
-                            ${qrHtml}
-                            <tr><td align="center" style="background-color: #f9fafb; padding: 20px; border-top: 1px solid #eaeaea;">
-                                <p style="margin: 0; font-size: 12px; font-weight: 600; color: #aaa; text-transform: uppercase;">&copy; Canyon Activities Board</p>
-                            </td></tr>
-                        </table>
-                    </td></tr>
-                </table>
-            </body></html>`;
-
-            const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-                method: 'POST',
-                headers: { 'accept': 'application/json', 'api-key': apiKey, 'content-type': 'application/json' },
-                body: JSON.stringify({
-                    sender: { name: 'Canyon Activities Board', email: 'studentmarkets@cabgcu.com' },
-                    to: [{ email: vendor.preferred_email, name: `${vendor.first_name} ${vendor.last_name}` }],
-                    subject: parsedSubj, 
-                    htmlContent: fullHtmlContent,
-                    textContent: plainTextStr
-                })
-            });
-
-            if(!response.ok) throw new Error("Email service failed");
+            const publicFormUrl = window.location.href.split('?')[0].split('#')[0];
+            await apiCall('SM_RESEND_EMAIL', { appId, eventId, publicFormUrl });
             showToast("✨ Email resent successfully!", false);
-        } catch(e) { console.error(e); showToast("Resend failed", true); }
-        finally { btn.innerHTML = origHtml; btn.disabled = false; }
+        } catch(e) {
+            console.error(e);
+            showToast("Resend failed: " + (e.message || 'Unknown error'), true);
+        } finally {
+            btn.innerHTML = origHtml;
+            btn.disabled = false;
+        }
     }
 
     async function checkExistingVendor() {
         const id = document.getElementById('form_student_id').value.trim();
         if(id.length < 4) return false;
         try {
-            const { data } = await _supabase.from('vendors').select('*').eq('student_id', id).order('created_at', { ascending: false }).limit(1);
+            const data = await apiCall('SM_CHECK_EXISTING_VENDOR', { studentId: id });
             if(data && data[0]) {
                 const v = data[0];
                 formConfig.questions.forEach(q => { 
@@ -1285,15 +1177,15 @@
         const btn = document.getElementById('submitBtn');
         const submitBtnText = document.getElementById('submitBtnText');
         const submitLoader = document.getElementById('submitLoader');
-        
+
         const basePayload = { status: 'Pending', email_sent: 'No', first_name: '', last_name: '' };
-        let agreements = []; 
+        let agreements = [];
 
         for(let q of formConfig.questions) {
             if(q.type==='section_header') continue;
             const el = document.getElementById('form_'+q.id);
             if(!el) continue;
-            
+
             let val = q.type==='checkbox_single' ? (el.checked?'Yes':'No') : el.value.trim();
 
             if (el.dataset && el.dataset.autofilled && val === 'Information on File') {
@@ -1303,24 +1195,24 @@
             if(q.id === 'full_name_combined') {
                 const parts = val.split(' ');
                 basePayload.first_name = parts[0] || val;
-                basePayload.last_name = parts.slice(1).join(' ') || '.'; 
+                basePayload.last_name = parts.slice(1).join(' ') || '.';
             }
-            
+
             if(q.isCore) {
-                basePayload[q.id] = val; 
+                basePayload[q.id] = val;
             } else if (q.type === 'checkbox_single' && el.checked) {
                 agreements.push(q.label);
             }
         }
-        
+
         if (document.getElementById('form_needs_power')?.value === 'Yes' && document.getElementById('powerAgreementCheck')?.checked) {
             agreements.push("Electricity Requirements Acknowledgment");
         }
-        
+
         if (document.getElementById('lateAgreementContainer')?.style.display === 'block' && document.getElementById('lateAgreementCheck')?.checked) {
             agreements.push("Late Application Strike Acknowledgment");
         }
-        
+
         basePayload.agreements_checked = JSON.stringify(agreements);
 
         btn.disabled = true;
@@ -1329,59 +1221,40 @@
 
         try {
             if (basePayload.food_license==='Yes') {
-                 const file = document.getElementById('formFoodLicenseFile').files[0];
-                 const existing = document.getElementById('formFoodLicenseLinkHidden').value;
-                 if(file) {
-                     submitBtnText.innerText = "Compressing Image...";
-                     const compressedFile = await compressImage(file);
-                     
-                     submitBtnText.innerText = "Uploading License...";
-                     const path = `license_${Date.now()}.jpg`;
-                     await _supabase.storage.from('licenses').upload(path, compressedFile);
-                     basePayload.food_license_link = _supabase.storage.from('licenses').getPublicUrl(path).data.publicUrl;
-                 } else {
-                     basePayload.food_license_link = existing;
-                 }
+                const file = document.getElementById('formFoodLicenseFile').files[0];
+                const existing = document.getElementById('formFoodLicenseLinkHidden').value;
+                if(file) {
+                    submitBtnText.innerText = "Compressing Image...";
+                    const compressedFile = await compressImage(file);
+
+                    submitBtnText.innerText = "Uploading License...";
+                    // Convert to data URL for postMessage
+                    const fileDataUrl = await new Promise(resolve => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.readAsDataURL(compressedFile);
+                    });
+                    const uploadResult = await apiCall('SM_UPLOAD_LICENSE', { fileData: fileDataUrl });
+                    basePayload.food_license_link = uploadResult.url;
+                } else {
+                    basePayload.food_license_link = existing;
+                }
             }
 
             submitBtnText.innerText = "Saving Application...";
             basePayload.additional_comments = document.getElementById('form_additional_comments')?.value.trim() || '';
-            
-            // Look up existing applications for this student in the selected markets
-            const { data: existingApps } = await _supabase.from('vendors')
-                .select('id, event_id')
-                .eq('student_id', basePayload.student_id)
-                .in('event_id', selectedIds);
-                
-            const existingMap = {};
-            if (existingApps) {
-                existingApps.forEach(app => existingMap[app.event_id] = app.id);
-            }
-            
-            // Process each selected market (Insert if new, Update if exists)
-            for (const eventId of selectedIds) {
-                const payload = { ...basePayload, event_id: eventId };
-                
-                if (existingMap[eventId]) {
-                    // Overwrite existing application
-                    const { error } = await _supabase.from('vendors').update(payload).eq('id', existingMap[eventId]);
-                    if (error) throw error;
-                } else {
-                    // Insert new application
-                    const { error } = await _supabase.from('vendors').insert([payload]);
-                    if (error) throw error;
-                }
-            }
-            
+
+            await apiCall('SM_SUBMIT_APPLICATION', { basePayload, selectedIds });
+
             generateSummary(selectedIds, basePayload);
 
             switchView('success');
             if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#0A84FF', '#BF5AF2'] });
-        } catch(e) { 
+        } catch(e) {
             console.error(e);
-            showToast("Submission failed", true); 
-        } finally { 
-            btn.disabled = false; 
+            showToast("Submission failed: " + (e.message || 'Unknown error'), true);
+        } finally {
+            btn.disabled = false;
             submitBtnText.innerText = "Submit Application";
             submitLoader.style.display = "none";
         }
