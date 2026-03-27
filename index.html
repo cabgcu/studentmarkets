@@ -809,7 +809,7 @@
         if (q.type === 'textarea') inputHtml = `<textarea ${common}></textarea>`;
         else if (q.type === 'dropdown') {
             const opts = (q.options || '').split(',').map(o => `<option value="${o.trim()}">${o.trim()}</option>`).join('');
-            let trigger = q.id==='food_license' ? 'onchange="toggleFoodLicense();toggleConditionalChildren(this)"' : (q.id==='needs_power' ? 'onchange="togglePowerAgreement();toggleConditionalChildren(this)"' : 'onchange="toggleConditionalChildren(this)"');
+            let trigger = q.id==='food_license' ? 'onchange="toggleFoodLicense();toggleConditionalChildren(this)"' : 'onchange="toggleConditionalChildren(this)"';
             inputHtml = `<select ${common} ${trigger}><option value="">Select...</option>${opts}</select>`;
         } else if (q.type === 'checkbox_single') {
             inputHtml = `<label class="custom-checkbox"><input type="checkbox" id="form_${q.id}" onchange="toggleConditionalChildren(this)"><span>${q.hint || q.label}</span></label>`;
@@ -823,7 +823,6 @@
         let htmlString = `<div class="form-group ${q.width === 'half' ? 'half-width' : 'full-width'}">${lbl}${inputHtml}</div>`;
 
         if (q.id === 'food_license') htmlString += `<div id="foodLicenseUploadSection" class="conditional-section full-width"><label class="form-label">Upload AZ food handlers license!<span class="required-mark">*</span></label><input type="hidden" id="formFoodLicenseLinkHidden"><div id="existingLicenseLink"></div><input type="file" id="formFoodLicenseFile" class="control-item" accept="image/*" /></div>`;
-        if (q.id === 'needs_power') htmlString += `<div id="powerAgreementSection" class="conditional-section full-width"><label class="form-label" style="color:#FFD60A">ELECTRICITY VENDORS:<span class="required-mark">*</span></label><p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px;line-height:1.4;">Due to high demand, electricity is available on a first-come, first-served basis. We do not provide extension cords. Portable power is STRONGLY encouraged.</p><label class="custom-checkbox"><input type="checkbox" id="powerAgreementCheck"><span>I acknowledge that I have read this statement</span></label></div>`;
         return htmlString;
     }
 
@@ -1083,10 +1082,6 @@
                  const hasExisting = document.getElementById('formFoodLicenseLinkHidden')?.value;
                  if (needsLicense && !hasExisting && !input.files[0]) { showToast("Please upload your food handlers license.", true); return false; }
             }
-            if (input.id === 'powerAgreementCheck') {
-                 const needsPower = document.getElementById('form_needs_power')?.value === 'Yes';
-                 if (needsPower && !input.checked) { showToast("Please acknowledge the power statement.", true); return false; }
-            }
         }
         return true;
     }
@@ -1270,13 +1265,13 @@
                         }
                     }
                 });
-                if (v.food_license_link && v.food_license_link !== 'Deleted to save space' && v.food_license_link !== 'Archived Google Drive Link') {
+                if (v.food_license_link && !v._food_license_needs_resubmit) {
                     document.getElementById('formFoodLicenseLinkHidden').value = v.food_license_link;
-                    document.getElementById('existingLicenseLink').innerHTML = `<div style="color:#34C759; font-size:0.85rem; margin:10px 0; font-weight:800; background:rgba(52,199,89,0.1); padding:10px; border-radius:10px; border:1px solid rgba(52,199,89,0.2);">✅ Existing license found on file.</div>`;
-                } else {
-                    document.getElementById('existingLicenseLink').innerHTML = `<div style="color:#FF9500; font-size:0.85rem; margin:10px 0; font-weight:800; background:rgba(255,149,0,0.1); padding:10px; border-radius:10px; border:1px solid rgba(255,149,0,0.2);">⚠️ Please re-submit your food handlers license.</div>`;
+                    document.getElementById('existingLicenseLink').innerHTML = `<div style="color:#34C759; font-size:0.85rem; margin:10px 0; font-weight:800; background:rgba(52,199,89,0.1); padding:10px; border-radius:10px; border:1px solid rgba(52,199,89,0.2);">✅ Verified license found on file.</div>`;
+                } else if (v._food_license_needs_resubmit) {
+                    document.getElementById('existingLicenseLink').innerHTML = `<div style="color:#FF3B30; font-size:0.85rem; margin:10px 0; font-weight:800; background:rgba(255,59,48,0.1); padding:10px; border-radius:10px; border:1px solid rgba(255,59,48,0.2);">🚨 Your previous food license could not be verified. Please re-upload it below.</div>`;
                 }
-                toggleFoodLicense(); togglePowerAgreement();
+                toggleFoodLicense();
                 // Trigger all conditional children based on autofilled values
                 formConfig.questions.forEach(aq => {
                     if (aq.type === 'dropdown' || aq.type === 'checkbox_single') {
@@ -1346,10 +1341,6 @@
             basePayload.custom_answers = JSON.stringify(customAnswers);
         }
 
-        if (document.getElementById('form_needs_power')?.value === 'Yes' && document.getElementById('powerAgreementCheck')?.checked) {
-            agreements.push("Electricity Requirements Acknowledgment");
-        }
-
         if (document.getElementById('lateAgreementContainer')?.style.display === 'block' && document.getElementById('lateAgreementCheck')?.checked) {
             agreements.push("Late Application Strike Acknowledgment");
         }
@@ -1402,7 +1393,6 @@
     }
 
     function toggleFoodLicense() { let s = document.getElementById('foodLicenseUploadSection'); if(s) s.style.display = document.getElementById('form_food_license').value==='Yes'?'block':'none'; }
-    function togglePowerAgreement() { let s = document.getElementById('powerAgreementSection'); if(s) s.style.display = document.getElementById('form_needs_power').value==='Yes'?'block':'none'; }
     function switchView(v) { document.querySelectorAll('.view').forEach(e => e.classList.remove('active')); document.getElementById(v + 'View').classList.add('active'); window.scrollTo(0,0); }
     function showToast(m, e) { const t = document.getElementById('toast'); t.innerText = m; t.style.background = e ? 'var(--gradient-fire)' : 'var(--gradient-success)'; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 4000); }
     
