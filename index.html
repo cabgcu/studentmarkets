@@ -1249,12 +1249,15 @@
                 basePayload.last_name = parts.slice(1).join(' ') || '.';
             }
 
-            // Save ALL question answers to database (including custom questions from form builder)
-            basePayload[q.id] = val;
-
-            // Also track non-core checkboxes in agreements array
-            if (q.type === 'checkbox_single' && !q.isCore && el.checked) {
-                agreements.push(q.label);
+            // Save all question answers EXCEPT agreement checkboxes (which go in agreements_checked)
+            if (q.type === 'checkbox_single') {
+                // All checkboxes go to agreements array
+                if (el.checked) {
+                    agreements.push(q.label);
+                }
+            } else if (q.isCore || !q.id.startsWith('agree_')) {
+                // Save to database: core fields + custom non-agreement questions
+                basePayload[q.id] = val;
             }
         }
 
