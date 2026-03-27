@@ -858,15 +858,30 @@
                 currentStepDiv.appendChild(currentGrid);
             }
 
-            // If this question has a condition, wrap it in a conditional-section div
-            const cond = q.condition;
-            if (cond && cond.parentIndex !== undefined && cond.parentIndex !== null) {
-                const parentQ = formConfig.questions[cond.parentIndex];
-                if (parentQ) {
-                    // Register in the children map so the parent can toggle it
-                    if (!conditionalChildrenMap[parentQ.id]) conditionalChildrenMap[parentQ.id] = [];
-                    conditionalChildrenMap[parentQ.id].push({ childId: q.id, triggerValue: cond.value });
-                    currentGrid.innerHTML += `<div class="conditional-section full-width" data-cond-parent="${parentQ.id}" data-cond-value="${cond.value}" style="display:none;">${generateFieldHtml(q)}</div>`;
+            // Handle both old condition format (single) and new conditions format (array)
+            // Migrate old format to new format
+            let conditions = q.conditions || [];
+            if (q.condition && !q.conditions) {
+                conditions = [q.condition];
+            }
+
+            // If this question has conditions, wrap it in conditional-section div
+            if (conditions && conditions.length > 0) {
+                // For multiple conditions, all must be true (AND logic)
+                // Generate data attributes for each condition
+                let condData = conditions.map((cond, idx) => {
+                    const parentQ = formConfig.questions[cond.parentIndex];
+                    if (parentQ) {
+                        // Register in the children map so the parent can toggle it
+                        if (!conditionalChildrenMap[parentQ.id]) conditionalChildrenMap[parentQ.id] = [];
+                        conditionalChildrenMap[parentQ.id].push({ childId: q.id, triggerValue: cond.value, condIndex: idx });
+                        return `data-cond-parent-${idx}="${parentQ.id}" data-cond-value-${idx}="${cond.value}"`;
+                    }
+                    return '';
+                }).filter(Boolean).join(' ');
+
+                if (condData) {
+                    currentGrid.innerHTML += `<div class="conditional-section full-width" ${condData} data-cond-count="${conditions.length}" style="display:none;">${generateFieldHtml(q)}</div>`;
                     return;
                 }
             }
@@ -882,6 +897,7 @@
         const fieldId = el.id.replace('form_', '');
         const children = conditionalChildrenMap[fieldId];
         if (!children) return;
+
         // Get current value: for checkboxes it's Yes/No, for dropdowns it's the selected value
         const parentQ = formConfig.questions.find(q => q.id === fieldId);
         let currentVal;
@@ -890,11 +906,45 @@
         } else {
             currentVal = el.value;
         }
-        children.forEach(({ childId, triggerValue }) => {
-            const wrapper = document.querySelector(`.conditional-section[data-cond-parent="${fieldId}"][data-cond-value="${triggerValue}"]`);
-            if (wrapper) {
-                wrapper.style.display = (currentVal === triggerValue) ? 'block' : 'none';
-            }
+
+        children.forEach(({ childId, triggerValue, condIndex }) => {
+            // Find all conditional sections that include this child
+            const allConditionals = document.querySelectorAll(`.conditional-section`);
+            allConditionals.forEach(wrapper => {
+                // Check if this wrapper includes the condition we're looking for
+                const parentAttr = wrapper.getAttribute(`data-cond-parent-${condIndex || 0}`);
+                const valueAttr = wrapper.getAttribute(`data-cond-value-${condIndex || 0}`);
+
+                if (parentAttr === fieldId) {
+                    // Now check all conditions for this wrapper are met
+                    const condCount = parseInt(wrapper.getAttribute('data-cond-count') || '1');
+                    let allConditionsMet = true;
+
+                    for (let i = 0; i < condCount; i++) {
+                        const pAttr = wrapper.getAttribute(`data-cond-parent-${i}`);
+                        const vAttr = wrapper.getAttribute(`data-cond-value-${i}`);
+
+                        if (pAttr) {
+                            const parentEl = document.getElementById('form_' + pAttr);
+                            if (parentEl) {
+                                const parentQ2 = formConfig.questions.find(q => q.id === pAttr);
+                                let condVal;
+                                if (parentQ2 && parentQ2.type === 'checkbox_single') {
+                                    condVal = parentEl.checked ? 'Yes' : 'No';
+                                } else {
+                                    condVal = parentEl.value;
+                                }
+                                if (condVal !== vAttr) {
+                                    allConditionsMet = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    wrapper.style.display = allConditionsMet ? 'block' : 'none';
+                }
+            });
         });
     }
 
@@ -1182,12 +1232,29 @@
             const data = await apiCall('SM_CHECK_EXISTING_VENDOR', { studentId: id });
             if(data && data[0]) {
                 const v = data[0];
-                formConfig.questions.forEach(q => { 
-                    const el = document.getElementById('form_'+q.id); 
+                formConfig.questions.forEach(q => {
+                    const el = document.getElementById('form_'+q.id);
                     if(el && q.id !== 'additional_comments' && q.id !== 'student_id') {
+                        // Check autofill flag - skip if autofill is disabled
+                        if (q.autofill === false) return;
+
+                        // Special handling for food_license: only autofill if license link exists
+                        if (q.id === 'food_license') {
+                            if (!v.food_license_link || v.food_license_link.trim() === '' || v.food_license_link === 'Deleted to save space' || v.food_license_link === 'Archived Google Drive Link') {
+                                // Food license file is not available, ask user to resubmit
+                                return;
+                            }
+                        }
+
                         let actualVal = '';
                         if (q.id === 'full_name_combined') actualVal = (v.first_name + ' ' + v.last_name).trim();
                         else if (v[q.id]) actualVal = v[q.id];
+                        else if (q.id === 'food_license' && v.custom_answers) {
+                            try {
+                                const customAnswersObj = JSON.parse(v.custom_answers);
+                                if (customAnswersObj && customAnswersObj[q.id]) actualVal = customAnswersObj[q.id];
+                            } catch(e) {}
+                        }
 
                         if (actualVal) {
                             if (['full_name_combined', 'preferred_email', 'gcu_email', 'phone'].includes(q.id)) {
@@ -1203,9 +1270,11 @@
                         }
                     }
                 });
-                if (v.food_license_link) {
+                if (v.food_license_link && v.food_license_link !== 'Deleted to save space' && v.food_license_link !== 'Archived Google Drive Link') {
                     document.getElementById('formFoodLicenseLinkHidden').value = v.food_license_link;
                     document.getElementById('existingLicenseLink').innerHTML = `<div style="color:#34C759; font-size:0.85rem; margin:10px 0; font-weight:800; background:rgba(52,199,89,0.1); padding:10px; border-radius:10px; border:1px solid rgba(52,199,89,0.2);">✅ Existing license found on file.</div>`;
+                } else {
+                    document.getElementById('existingLicenseLink').innerHTML = `<div style="color:#FF9500; font-size:0.85rem; margin:10px 0; font-weight:800; background:rgba(255,149,0,0.1); padding:10px; border-radius:10px; border:1px solid rgba(255,149,0,0.2);">⚠️ Please re-submit your food handlers license.</div>`;
                 }
                 toggleFoodLicense(); togglePowerAgreement();
                 // Trigger all conditional children based on autofilled values
