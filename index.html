@@ -42,6 +42,9 @@
             color: var(--text-main);
             background-color: #0b0b0e;
             min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             overflow-x: hidden;
             scrollbar-width: thin;
             scrollbar-color: #444 transparent;
@@ -69,13 +72,19 @@
             flex-direction: row !important;
             align-items: stretch !important;
             justify-content: center !important;
-            max-width: 920px !important;
-            height: 82vh !important;
+            max-width: 1024px !important;
+            width: 100% !important;
+            height: 85vh !important;
+            min-height: unset !important;
             padding: 16px !important;
             gap: 20px !important;
+            margin: auto !important;
+        }
+        @media (min-width: 640px) {
+            .app-container.welcome-active { padding: 32px !important; }
         }
         @media (min-width: 768px) {
-            .app-container.welcome-active { padding: 32px !important; }
+            .app-container.welcome-active { height: 78vh !important; }
         }
 
         .view { display: none; opacity: 0; transform: translateY(10px); transition: 0.3s ease; width: 100%; }
