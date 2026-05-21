@@ -9,6 +9,10 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <!-- Image Compression Library (client-side before sending to vendoradmin) -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js"></script>
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -32,13 +36,16 @@
         
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         
-        body { 
-            margin: 0; 
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif; 
-            color: var(--text-main); 
-            background-color: var(--bg-dark); 
-            min-height: 100vh; 
-            overflow-x: hidden; 
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+            color: var(--text-main);
+            background-color: #0b0b0e;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
             scrollbar-width: thin;
             scrollbar-color: #444 transparent;
         }
@@ -50,30 +57,39 @@
 
         :focus-visible { outline: 3px solid #0A84FF; outline-offset: 3px; border-radius: 6px; }
 
-        /* V1 Survey Background Container - Blue/Purple Glow */
-        #bg-container { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; overflow: hidden; 
-            background-color: #000000;
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(10, 132, 255, 0.25) 0%, transparent 50%), 
-                radial-gradient(circle at 90% 80%, rgba(191, 90, 242, 0.25) 0%, transparent 50%); 
+        /* Background */
+        #bg-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; overflow: hidden;
+            background-color: #0b0b0e;
         }
-
-        #bg-overlay { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; 
-            background: rgba(0, 0, 0, 0.2); 
-            backdrop-filter: blur(var(--blur-bg)); 
-            -webkit-backdrop-filter: blur(var(--blur-bg)); 
-        }
+        #bg-overlay { display: none; }
 
         .app-container { position: relative; max-width: 1280px; margin: 0 auto; padding: 16px 12px; min-height: 100vh; display: flex; flex-direction: column; transition: all 0.4s ease; }
         @media (min-width: 768px) { .app-container { padding: 40px 24px; } }
 
-        /* Welcome Screen Constrained Layout */
-        .app-container.welcome-active { justify-content: center; align-items: center; max-width: 420px; padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom); }
+        /* Welcome Screen Two-Panel Layout */
+        .app-container.welcome-active {
+            flex-direction: row !important;
+            align-items: stretch !important;
+            justify-content: center !important;
+            max-width: 1024px !important;
+            width: 100% !important;
+            height: 85vh !important;
+            min-height: unset !important;
+            padding: 16px !important;
+            gap: 20px !important;
+            margin: auto !important;
+        }
+        @media (min-width: 640px) {
+            .app-container.welcome-active { padding: 32px !important; }
+        }
+        @media (min-width: 768px) {
+            .app-container.welcome-active { height: 78vh !important; }
+        }
 
         .view { display: none; opacity: 0; transform: translateY(10px); transition: 0.3s ease; width: 100%; }
         .view.active { display: block; opacity: 1; transform: translateY(0); animation: fadeUp 0.4s ease forwards; }
+        .welcome-active #applicationView.active { display: flex; flex-direction: column; flex: 1; height: 100%; min-width: 0; }
         
         .hero-banner { width: 100%; max-width: var(--max-width-content); margin: 0 auto 24px; border-radius: var(--radius-card); overflow: hidden; border: 1px solid var(--glass-border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); background: #111; line-height: 0; }
         .hero-banner img { width: 100%; height: auto; display: block; }
@@ -91,8 +107,23 @@
         .survey-card { width: 100%; max-width: var(--max-width-content); margin: 0 auto 30px; padding: 24px; }
         @media (min-width: 768px) { .survey-card { padding: 40px; margin-bottom: 40px; } }
 
-        /* Dynamic Welcome Mode Overlay */
-        .survey-card.welcome-mode { background: transparent; border-color: transparent; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; padding: 0; margin-bottom: 0; }
+        /* Welcome Mode Right Panel Card */
+        .survey-card.welcome-mode {
+            background: #151518 !important;
+            border: 1px solid rgba(255,255,255,0.05) !important;
+            border-radius: 16px !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5) !important;
+            padding: 0 !important;
+            margin-bottom: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            height: 100% !important;
+            overflow: hidden !important;
+            flex: 1 !important;
+            position: relative !important;
+        }
 
         .section-header { font-size: 1.1rem; font-weight: 800; color: #ffffff; margin-bottom: 16px; margin-top: 24px; letter-spacing: 0.05em; display: flex; align-items: center; gap: 10px; }
         .section-header::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.1); }
@@ -155,7 +186,7 @@
         #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 16px 24px; border-radius: 100px; background: var(--gradient-success); font-weight: 700; z-index: 3000; display: none; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.5); color: #fff; }
         
         footer { margin-top:auto; padding:60px 0 40px; text-align:center; color: rgba(255, 255, 255, 0.4); font-size: 0.75rem; letter-spacing: 0.05em; line-height: 1.6; }
-        .welcome-active footer { margin-top: 0; padding: 32px 0 10px; }
+        .welcome-active footer { display: none; }
 
         .center-btn-wrapper { display: flex; justify-content: center; width: 100%; margin-top: 20px; }
         .success-icon { width: 80px; height: 80px; background: var(--gradient-success); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 40px; color: white; box-shadow: 0 10px 20px rgba(52, 199, 89, 0.3); }
@@ -188,6 +219,7 @@
         /* Wizard Logic */
         .form-step { display: none; opacity: 0; transform: translateY(10px); transition: 0.3s ease; }
         .form-step.active { display: block; opacity: 1; transform: translateY(0); animation: fadeUp 0.4s ease forwards; }
+        #step-0.active { display: flex; flex-direction: column; }
         
         .wizard-nav { display: flex; justify-content: center; gap: 15px; margin-top: 30px; width: 100%; }
         .wizard-nav .btn { flex: 0 1 auto; width: auto; min-width: 140px; }
@@ -198,53 +230,152 @@
         .progress-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2); transition: 0.3s; }
         .progress-dot.active { background: #0A84FF; transform: scale(1.2); }
 
-        /* Welcome UI matched to V1 */
-        .arena-tag {
-            display: inline-flex; align-items: center; padding: 6px 16px; border-radius: 100px; 
-            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); 
-            color: #ffffff; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; 
-            letter-spacing: 0.05em; margin-bottom: 20px;
+        /* Welcome Left Image Panel */
+        #welcomeLeftPanel {
+            display: none;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+            flex: 1;
+            flex-shrink: 0;
         }
-        
-        .glass-card-inner {
-            background: var(--glass-surface); 
-            backdrop-filter: blur(var(--blur-card)); 
-            -webkit-backdrop-filter: blur(var(--blur-card)); 
-            border: 1px solid var(--glass-border); 
-            box-shadow: 0 30px 80px rgba(0,0,0,0.6); 
-            border-radius: var(--radius-card); 
-            padding: 32px 24px;
-            text-align: center; margin: 0 auto; width: 100%; max-width: 420px;
+        #welcomeLeftPanel img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        @media (min-width: 768px) { #welcomeLeftPanel { display: block; } }
+
+        /* Welcome Right Panel inner layout */
+        .survey-card.welcome-mode #multiPageForm {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .survey-card.welcome-mode #step-0 {
+            flex: 1;
+            overflow: hidden;
+            display: flex !important;
+            flex-direction: column;
         }
 
-        .big-action-btn {
-            background: var(--gradient-accent); color: white;
-            border: none; padding: 18px; width: 100%; border-radius: var(--radius-btn);
-            font-weight: 800; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em;
-            cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 10px 30px rgba(10, 132, 255, 0.3);
-            touch-action: manipulation;
+        /* Welcome scroll area */
+        .welcome-scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px 32px 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            scrollbar-width: thin;
+            scrollbar-color: #3f3f46 #151518;
         }
-        .big-action-btn:not(:disabled) { animation: pulse-glow 2.5s infinite; }
-        .big-action-btn:not(:disabled):hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(10, 132, 255, 0.5); }
-        .big-action-btn:disabled { opacity: 0.25; background: #3a3a3c; box-shadow: none; cursor: not-allowed; animation: none; color: #777; }
-        
-        @keyframes pulse-glow {
-            0%, 100% { transform: scale(1); box-shadow: 0 10px 25px -8px rgba(10, 132, 255, 0.4); }
-            50% { transform: scale(1.02); box-shadow: 0 15px 35px -8px rgba(10, 132, 255, 0.6); }
+        .welcome-scroll-area::-webkit-scrollbar { width: 6px; }
+        .welcome-scroll-area::-webkit-scrollbar-track { background: #151518; border-radius: 6px; }
+        .welcome-scroll-area::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 6px; }
+
+        /* Help button */
+        .welcome-help-btn {
+            width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #6b6b75;
+            background: transparent;
+            cursor: pointer;
+            transition: 0.2s;
+            position: absolute; top: 24px; right: 24px; z-index: 20;
+        }
+        .welcome-help-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+
+        /* Welcome logo */
+        .welcome-logo { height: 56px; object-fit: contain; margin-bottom: 24px; display: block; }
+
+        /* Welcome badge */
+        .welcome-badge {
+            font-size: 11px; font-weight: 700; letter-spacing: 0.15em;
+            text-transform: uppercase;
+            background: linear-gradient(to right, #7048e8, #3b82f6);
+            -webkit-background-clip: text; background-clip: text;
+            color: transparent;
+            margin-bottom: 8px;
         }
 
+        /* Welcome title */
+        .welcome-title {
+            font-size: 36px; font-weight: 900; color: #fff;
+            text-transform: uppercase; letter-spacing: -0.02em;
+            line-height: 1; margin: 0 0 32px;
+        }
+
+        /* Welcome alert box */
+        .welcome-alert-box {
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px 24px;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 12px;
+            width: 100%; margin-bottom: 24px;
+        }
+        .welcome-alert-icon { color: #3b82f6; flex-shrink: 0; }
+        .welcome-alert-box p {
+            color: #8a8a93; font-size: 12px;
+            line-height: 1.6; margin: 0; text-align: center;
+        }
+
+        /* Welcome input label */
+        .welcome-input-label {
+            display: block; font-size: 11px; font-weight: 700;
+            letter-spacing: 0.1em; text-transform: uppercase;
+            color: #6b6b75; margin-bottom: 14px; text-align: center;
+        }
+
+        /* New neon input */
         .neon-input {
-            width: 100%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); 
-            border-radius: var(--radius-btn); padding: 16px 20px;
-            color: white; font-size: 1.1rem; font-weight: 600; font-family: inherit;
-            outline: none; transition: 0.3s; text-align: center;
+            width: 100%; background: #1c1c21;
+            border: 1px solid transparent;
+            border-radius: 12px; padding: 16px;
+            color: white; font-size: 1rem; font-weight: 500;
+            font-family: inherit; outline: none;
+            transition: border-color 0.2s; text-align: center;
         }
-        .neon-input::placeholder { color: rgba(255, 255, 255, 0.4); font-weight: 500; }
-        .neon-input:focus { border-color: #0A84FF; box-shadow: 0 0 15px rgba(10, 132, 255, 0.4), 0 0 2px rgba(191, 90, 242, 0.4); background: rgba(255,255,255,0.12); transform: scale(1.01); }
+        .neon-input::placeholder { color: #4b4b52; }
+        .neon-input:focus { border-color: #7048e8; }
+        .neon-input:disabled { cursor: not-allowed; opacity: 0.6; }
 
-        #step0-status-btn { background: none; border: none; color: var(--text-muted); text-decoration: underline; font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-top: 20px; width: 100%; transition: 0.2s; }
+        /* Welcome status button */
+        #step0-status-btn {
+            background: none; border: none;
+            color: #6b6b75; text-decoration: underline;
+            font-size: 0.8rem; font-weight: 500;
+            cursor: pointer; margin-top: 18px; width: 100%;
+            transition: 0.2s; font-family: inherit;
+        }
         #step0-status-btn:disabled { opacity: 0.3; text-decoration: none; cursor: not-allowed; }
         #step0-status-btn:hover:not(:disabled) { color: #fff; }
+
+        /* Welcome footer */
+        #welcomeFooter {
+            display: none;
+            padding: 20px 32px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            justify-content: center;
+        }
+        .survey-card.welcome-mode #welcomeFooter { display: flex; }
+
+        /* Welcome action button */
+        #step0-next-btn {
+            background: linear-gradient(to right, #7048e8, #3b82f6);
+            color: white; border: none;
+            border-radius: 12px; padding: 16px;
+            width: 100%; max-width: 340px;
+            font-size: 13px; font-weight: 700;
+            letter-spacing: 0.05em; text-transform: uppercase;
+            cursor: pointer; font-family: inherit; transition: 0.2s;
+        }
+        #step0-next-btn:not(:disabled):hover { opacity: 0.9; transform: translateY(-1px); }
+        #step0-next-btn:disabled { cursor: not-allowed; opacity: 0.75; }
+
+        .arena-tag { display: none; }
 
         .status-market-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 20px; margin-bottom: 16px; transition: all 0.3s ease; }
         .status-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
@@ -261,6 +392,11 @@
 <div id="bg-overlay"></div>
 
 <div class="app-container welcome-active" id="mainAppContainer">
+    <!-- Left image panel (welcome mode only, md+) -->
+    <div id="welcomeLeftPanel">
+        <img src="https://i.imgur.com/65f9UL5.jpeg" alt="Student Market">
+    </div>
+
     <div class="hero-banner" id="heroBanner" style="display:none;">
         <img id="appHeaderImg" src="https://lh3.googleusercontent.com/d/177iu9igWGiUkD8vdJhZn80PXgLa6hM3c" alt="Student Market">
     </div>
@@ -278,25 +414,37 @@
                 
                 <!-- STEP 0: Student ID (Welcome Mode) -->
                 <div class="form-step active" id="step-0">
-                    <div style="text-align: center;">
-                        <div class="arena-tag">
-                            <span style="width: 6px; height: 6px; background: #ffffff; border-radius: 50%; margin-right: 8px; box-shadow: 0 0 8px #ffffff;"></span>
-                            STUDENT MARKET 2026
-                        </div>
-                        <h1 style="margin: 0; font-size: 1.8rem; letter-spacing: -0.02em; line-height: 1.1; text-transform: uppercase;">VENDOR<br>APPLICATION</h1>
-                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 15px; margin-bottom: 25px; font-weight: 500;">Please enter your Student ID to begin the application.</p>
-                    </div>
-                    
-                    <div class="glass-card-inner">
-                        <div id="studentIdContainer">
-                            <div class="input-group" style="margin-bottom: 24px;">
-                                <label style="display: block; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.15em; font-weight: 800; margin-bottom: 12px; text-align: center;">Student ID Number</label>
-                                <input type="tel" id="form_student_id" class="neon-input" placeholder="Type here..." maxlength="8" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
+                    <!-- Help button -->
+                    <button type="button" class="welcome-help-btn" title="Help">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                    </button>
+
+                    <!-- Scrollable content -->
+                    <div class="welcome-scroll-area">
+                        <div style="width:100%; max-width:340px;">
+                            <!-- Logo -->
+                            <img src="https://i.imgur.com/p2qZOL5.png" alt="Student Market Logo" class="welcome-logo" style="margin-left:auto;margin-right:auto;">
+                            <!-- Badge -->
+                            <div class="welcome-badge">Student Market 2026</div>
+                            <!-- Title -->
+                            <h1 class="welcome-title">VENDOR<br>APPLICATION</h1>
+                            <!-- Alert / info box -->
+                            <div class="welcome-alert-box">
+                                <div class="welcome-alert-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                </div>
+                                <p>Please enter your Student ID to begin the application.</p>
                             </div>
+                            <!-- Input -->
+                            <div id="studentIdContainer">
+                                <div style="margin-bottom:0;">
+                                    <label class="welcome-input-label">Student ID Number</label>
+                                    <input type="tel" id="form_student_id" class="neon-input" placeholder="Enter your ID" maxlength="8" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
+                                </div>
+                            </div>
+                            <!-- Status button -->
+                            <button id="step0-status-btn" onclick="checkStatus()" disabled>Check Application Status</button>
                         </div>
-                        <button id="step0-next-btn" class="big-action-btn" onclick="nextPrev(1)" disabled>Start Application</button>
-                        
-                        <button id="step0-status-btn" onclick="checkStatus()" disabled>Check Application Status</button>
                     </div>
                 </div>
 
@@ -338,6 +486,11 @@
                     </button>
                 </div>
             </form>
+
+            <!-- Welcome footer (step-0 action button, shown only in welcome mode) -->
+            <div id="welcomeFooter">
+                <button id="step0-next-btn" onclick="nextPrev(1)" disabled>START APPLICATION</button>
+            </div>
         </div>
     </div>
 
@@ -699,14 +852,14 @@
         document.getElementById('marketSelectionContainer').innerHTML = '<div style="color:#FF3B30">Applications are currently closed.</div>';
         document.getElementById('nextBtn').disabled = true;
         document.getElementById('appDesc').innerHTML = msg;
-        
+
         const step0Btn = document.getElementById('step0-next-btn');
         if (step0Btn) {
             step0Btn.disabled = true;
             step0Btn.innerText = "APPLICATIONS CLOSED";
         }
-        
-        const welcomeDesc = document.querySelector('#step-0 p');
+
+        const welcomeDesc = document.querySelector('#step-0 .welcome-alert-box p');
         if (welcomeDesc) welcomeDesc.innerText = msg;
     }
 
@@ -746,11 +899,11 @@
                 
                 openMarkets.sort((a, b) => new Date(a.market_date) - new Date(b.market_date));
                 
-                const welcomeDesc = document.querySelector('#step-0 p');
+                const welcomeDesc = document.querySelector('#step-0 .welcome-alert-box p');
                 if (welcomeDesc) welcomeDesc.innerText = "Please enter your Student ID to begin the application.";
                 
                 const step0Btn = document.getElementById('step0-next-btn');
-                if (step0Btn) step0Btn.innerText = "Start Application";
+                if (step0Btn) step0Btn.innerText = "START APPLICATION";
 
                 if (openMarkets.length > 1) {
                     if (formConfig.eventTitle) document.getElementById('appTitle').innerHTML = formConfig.eventTitle;
@@ -1005,7 +1158,8 @@
             x[i].style.display = "none";
             x[i].classList.remove('active');
         }
-        x[n].style.display = "block";
+        x[n].style.display = n === 0 ? "flex" : "block";
+        x[n].style.flexDirection = n === 0 ? "column" : "";
         setTimeout(() => x[n].classList.add('active'), 10);
         const appContainer = document.getElementById('mainAppContainer');
         const heroBanner = document.getElementById('heroBanner');
@@ -1013,17 +1167,20 @@
         const wizardNav = document.getElementById('wizardNavContainer');
         const progressEl = document.getElementById('wizardProgress');
         
+        const leftPanel = document.getElementById('welcomeLeftPanel');
         if (n === 0) {
             appContainer.classList.add('welcome-active');
             heroBanner.style.display = 'none';
             wizardNav.style.display = 'none';
             progressEl.style.display = 'none';
             mainCard.classList.add('welcome-mode');
+            if (leftPanel) leftPanel.style.display = '';
         } else {
             appContainer.classList.remove('welcome-active');
             heroBanner.style.display = 'block';
             wizardNav.style.display = 'flex';
             mainCard.classList.remove('welcome-mode');
+            if (leftPanel) leftPanel.style.display = 'none';
             if (x.length > 1) {
                 progressEl.style.display = 'block';
                 document.getElementById('currentStepNum').innerText = (n + 1);
