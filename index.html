@@ -94,14 +94,12 @@
         .hero-banner { width: 100%; max-width: var(--max-width-content); margin: 0 auto 24px; border-radius: var(--radius-card); overflow: hidden; border: 1px solid var(--glass-border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); background: #111; line-height: 0; }
         .hero-banner img { width: 100%; height: auto; display: block; }
         
-        /* V1 Survey Frosted Card Styling */
-        .frosted { 
-            background: var(--glass-surface); 
-            backdrop-filter: blur(var(--blur-card)); 
-            -webkit-backdrop-filter: blur(var(--blur-card)); 
-            border: 1px solid var(--glass-border); 
-            box-shadow: 0 30px 80px rgba(0,0,0,0.6); 
-            border-radius: var(--radius-card);
+        /* Survey Card Styling */
+        .frosted {
+            background: #151518;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            border-radius: 16px;
         }
         
         .survey-card { width: 100%; max-width: var(--max-width-content); margin: 0 auto 30px; padding: 24px; }
@@ -1177,7 +1175,7 @@
             if (leftPanel) leftPanel.style.display = '';
         } else {
             appContainer.classList.remove('welcome-active');
-            heroBanner.style.display = 'block';
+            heroBanner.style.display = 'none';
             wizardNav.style.display = 'flex';
             mainCard.classList.remove('welcome-mode');
             if (leftPanel) leftPanel.style.display = 'none';
