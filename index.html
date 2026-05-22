@@ -427,7 +427,7 @@
                             <!-- Logo -->
                             <img src="https://i.imgur.com/p2qZOL5.png" alt="Student Market Logo" class="welcome-logo" style="margin-left:auto;margin-right:auto;">
                             <!-- Badge -->
-                            <div class="welcome-badge">Student Market 2026</div>
+                            <div class="welcome-badge" id="welcomeBadge">Student Market 2026</div>
                             <!-- Title -->
                             <h1 class="welcome-title">VENDOR<br>APPLICATION</h1>
                             <!-- Alert / info box -->
@@ -465,6 +465,8 @@
                     <fieldset class="form-group full-width" style="margin-bottom:15px; border:none; padding:0; margin:0;">
                         <legend class="form-label" id="lbl-market-selection" style="width:100%;">Which Market are you applying for?<span class="required-mark">*</span></legend>
                         <div id="marketSelectionContainer"></div>
+
+                        <div id="welcomeIntroText" style="display:none; color: var(--text-muted); font-size: 0.875rem; line-height: 1.6; margin-top: 16px; padding: 14px 16px; border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; background: rgba(255,255,255,0.02); text-align: left;"></div>
 
                         <div id="lateAgreementContainer" style="display:none; background: rgba(255, 59, 48, 0.05); border: 1px solid rgba(255, 59, 48, 0.3); padding: 18px; border-radius: 16px; margin-top: 20px; animation: fadeUp 0.3s ease;">
                             <label class="custom-checkbox" style="border-color: rgba(255, 59, 48, 0.4); background: rgba(0,0,0,0.5); margin-bottom: 0;">
@@ -521,7 +523,7 @@
     </div>
 
     <footer>
-        © 2026 Canyon Activities Board <br>
+        <span id="footerYear">© 2026 Canyon Activities Board</span> <br>
     </footer>
 </div>
 
@@ -908,7 +910,10 @@
                 if (step0Btn) step0Btn.innerText = "START APPLICATION";
 
                 if (openMarkets.length > 1) {
-                    if (formConfig.eventTitle) document.getElementById('appTitle').innerHTML = formConfig.eventTitle;
+                    if (formConfig.eventTitle) {
+                        document.getElementById('appTitle').innerHTML = formConfig.eventTitle;
+                        document.title = `${formConfig.eventTitle} - CAB`;
+                    }
                     
                     let descHtml = "";
                     if (formConfig.eventDesc) {
@@ -924,7 +929,9 @@
                     const singleMarket = openMarkets[0];
                     const specificConfig = marketConfigV3[String(singleMarket.id)] || {};
                     
-                    document.getElementById('appTitle').innerHTML = specificConfig.title || singleMarket.name || formConfig.eventTitle || "Vendor Application";
+                    const eventDisplayName = specificConfig.title || singleMarket.name || formConfig.eventTitle || "Vendor Application";
+                    document.getElementById('appTitle').innerHTML = eventDisplayName;
+                    document.title = `${eventDisplayName} - CAB`;
                     
                     let descHtml = specificConfig.description || singleMarket.description || formConfig.eventDesc || "";
                     if (descHtml) {
@@ -1001,6 +1008,24 @@
             const cfg = await apiCall('SM_LOAD_CONFIG');
             formConfig = cfg;
             marketConfigV3 = cfg.marketConfigV3 || {};
+
+            // Update badge with school_year from config
+            const badge = document.getElementById('welcomeBadge');
+            if (badge) badge.textContent = `Student Market ${formConfig.school_year || new Date().getFullYear()}`;
+
+            // Update footer year from school_year (e.g. "2025-2026" → "2026")
+            const footerYear = document.getElementById('footerYear');
+            if (footerYear) footerYear.textContent = `© ${formConfig.school_year?.split('-')[1] || new Date().getFullYear()} Canyon Activities Board`;
+
+            // Populate welcome intro text if provided
+            if (formConfig.welcome_intro) {
+                const introEl = document.getElementById('welcomeIntroText');
+                if (introEl) {
+                    introEl.innerHTML = formConfig.welcome_intro.replace(/\n/g, '<br>');
+                    introEl.style.display = 'block';
+                }
+            }
+
             renderPublicForm();
         } catch (e) {
             console.error("Failed to load config:", e);
