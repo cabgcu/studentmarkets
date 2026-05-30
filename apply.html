@@ -830,15 +830,30 @@
     window.onload = async () => {
         await loadConfig();
         await loadEvents();
-        
+
+        const _urlParams = new URLSearchParams(window.location.search);
+        const _isStatusMode = _urlParams.get('mode') === 'status';
+
+        if (_isStatusMode) {
+            const welcomeDesc = document.querySelector('#step-0 .welcome-alert-box p');
+            if (welcomeDesc) welcomeDesc.innerText = 'Enter your Student ID to check your application status.';
+            const step0Btn = document.getElementById('step0-next-btn');
+            if (step0Btn) {
+                step0Btn.innerText = 'CHECK STATUS';
+                step0Btn.onclick = () => checkStatus();
+            }
+        }
+
         document.getElementById('form_student_id').addEventListener('input', () => {
             const idInput = document.getElementById('form_student_id');
             const step0Btn = document.getElementById('step0-next-btn');
             const statusBtn = document.getElementById('step0-status-btn');
-            
+
             if (idInput && step0Btn) {
                 const isValid = idInput.value.trim().length >= 3;
-                if (isAppClosed) {
+                if (_isStatusMode) {
+                    step0Btn.disabled = !isValid;
+                } else if (isAppClosed) {
                     step0Btn.disabled = true;
                 } else {
                     step0Btn.disabled = !isValid;
