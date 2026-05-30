@@ -192,288 +192,30 @@
             inset: 0 !important;
             z-index: 50 !important;
             display: none;
-            flex-direction: column !important;
             background: #050505;
             overflow: hidden;
         }
         #step-0.active {
-            display: flex !important;
+            display: block !important;
             opacity: 1 !important;
             transform: none !important;
         }
+        #step0-next-btn:disabled { opacity: 0.4 !important; cursor: not-allowed !important; pointer-events: none; }
+        #step0-status-btn:disabled { opacity: 0.3 !important; cursor: not-allowed !important; }
 
-        /* Hero background layers inside step-0 */
-        #step0-bg-image {
-            position: absolute;
-            inset: 0;
-            z-index: 0;
-            pointer-events: none;
-            overflow: hidden;
+        /* Step-0 hero entry animations */
+        @keyframes ambientGlow {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.05); opacity: 0.7; }
         }
-        #step0-bg-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: center;
-            opacity: 0.75;
-            transform: scale(1.05);
+        .ambient-glow { animation: ambientGlow 8s ease-in-out infinite; }
+        .animate-fade-up {
+            animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
         }
-        #step0-gradient-left {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to right, rgba(5,5,5,0.9) 0%, rgba(5,5,5,0.5) 50%, transparent 100%);
-        }
-        #step0-gradient-bottom {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to top, rgba(5,5,5,0.8) 0%, transparent 50%, rgba(5,5,5,0.3) 100%);
-        }
-        #step0-ambient-glow {
-            position: absolute;
-            left: -10%;
-            top: 20%;
-            width: 50vw;
-            height: 50vw;
-            background: radial-gradient(ellipse at center, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 40%, transparent 70%);
-            border-radius: 50%;
-            filter: blur(80px);
-            mix-blend-mode: screen;
-            animation: ambientGlow 8s ease-in-out infinite;
-        }
-
-        /* Step-0 nav */
-        #step0-nav {
-            position: relative;
-            z-index: 10;
-            width: 100%;
-            padding: 24px 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        @media (min-width: 640px) {
-            #step0-nav {
-                justify-content: flex-start;
-                padding: 32px 48px;
-            }
-        }
-        @media (min-width: 1024px) {
-            #step0-nav { padding: 32px 96px; }
-        }
-        #step0-nav-logo {
-            height: 36px;
-            width: auto;
-            object-fit: contain;
-            opacity: 0.9;
-            transition: opacity 0.3s;
-            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
-        }
-        #step0-nav-logo:hover { opacity: 1; }
-        #step0-nav-text {
-            display: none;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.3em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.5);
-            margin-left: 16px;
-        }
-        @media (min-width: 640px) { #step0-nav-text { display: block; } }
-
-        /* Step-0 hero content */
-        #step0-content {
-            position: relative;
-            z-index: 10;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 20px 20px 40px;
-        }
-        @media (min-width: 640px) {
-            #step0-content { padding: 20px 48px 60px; }
-        }
-        @media (min-width: 1024px) {
-            #step0-content { padding: 20px 96px 60px; }
-        }
-
-        #step0-inner {
-            max-width: 480px;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-        @media (min-width: 640px) {
-            #step0-inner {
-                align-items: flex-start;
-                text-align: left;
-            }
-        }
-
-        /* Step-0 badge pill */
-        #step0-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 14px;
-            border-radius: 999px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            margin-bottom: 20px;
-        }
-        #step0-badge-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: white;
-            box-shadow: 0 0 10px rgba(255,255,255,0.8);
-            animation: pulse 2s ease-in-out infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-        #step0-badge span {
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.8);
-        }
-
-        /* Step-0 hero headline */
-        #step0-headline {
-            font-size: clamp(3rem, 8vw, 5.5rem);
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: -0.02em;
-            line-height: 0.9;
-            color: white;
-            margin: 0 0 40px;
-            text-shadow: 0 4px 32px rgba(0,0,0,0.4);
-        }
-        #step0-headline .headline-gradient {
-            color: transparent;
-            -webkit-background-clip: text;
-            background-clip: text;
-            background-image: linear-gradient(to right, white, rgba(255,255,255,0.5));
-        }
-
-        /* Step-0 ID input */
-        #step0-id-wrap {
-            width: 100%;
-            max-width: 360px;
-            margin-bottom: 16px;
-        }
-        #step0-id-label {
-            display: block;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.4);
-            margin-bottom: 10px;
-            text-align: center;
-        }
-        @media (min-width: 640px) { #step0-id-label { text-align: left; } }
-
-        #form_student_id {
-            width: 100%;
-            background: rgba(255,255,255,0.07);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 14px;
-            padding: 16px 20px;
-            color: white;
-            font-size: 1rem;
-            font-weight: 500;
-            font-family: inherit;
-            outline: none;
-            transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
-            text-align: center;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
-        #form_student_id::placeholder { color: rgba(255,255,255,0.25); }
-        #form_student_id:focus {
-            border-color: rgba(255,255,255,0.35);
-            background: rgba(255,255,255,0.1);
-            box-shadow: 0 0 0 3px rgba(255,255,255,0.06);
-        }
-        @media (min-width: 640px) { #form_student_id { text-align: left; } }
-
-        /* Step-0 action buttons */
-        #step0-actions {
-            width: 100%;
-            max-width: 360px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            align-items: stretch;
-        }
-        @media (min-width: 640px) {
-            #step0-actions {
-                flex-direction: row;
-                align-items: center;
-            }
-        }
-
-        /* Primary "Start Application" button */
-        #step0-next-btn {
-            position: relative;
-            overflow: hidden;
-            background: linear-gradient(to right, #2563eb, #9333ea);
-            color: white;
-            border: none;
-            border-radius: 999px;
-            padding: 14px 28px;
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 0.03em;
-            cursor: pointer;
-            font-family: inherit;
-            transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
-            box-shadow: 0 8px 20px rgba(147,51,234,0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            flex: 1;
-        }
-        #step0-next-btn:not(:disabled):hover {
-            transform: translateY(-2px) scale(1.02);
-            box-shadow: 0 12px 30px rgba(147,51,234,0.5);
-        }
-        #step0-next-btn:not(:disabled):active { transform: scale(0.98); }
-        #step0-next-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-
-        /* Secondary "Check Status" button */
-        #step0-status-btn {
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.15);
-            color: rgba(255,255,255,0.6);
-            border-radius: 999px;
-            padding: 14px 24px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: inherit;
-            transition: background 0.2s, color 0.2s, border-color 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            white-space: nowrap;
-        }
-        #step0-status-btn:not(:disabled):hover {
-            background: rgba(255,255,255,0.08);
-            color: white;
-            border-color: rgba(255,255,255,0.3);
-        }
-        #step0-status-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
 
         .arena-tag { display: none; }
 
@@ -588,64 +330,101 @@
     </footer>
 </div>
 
-<!-- STEP 0: Full-screen hero (outside mainSurveyCard, fixed overlay) -->
-<div class="form-step active" id="step-0">
-    <!-- Background layers -->
-    <div id="step0-bg-image">
-        <img src="https://i.imgur.com/65f9UL5.jpeg" alt="Night Market" />
-        <div id="step0-gradient-left"></div>
-        <div id="step0-gradient-bottom"></div>
-        <div id="step0-ambient-glow"></div>
+<!-- STEP 0: Full-screen hero (fixed overlay) -->
+<div class="form-step active text-white antialiased min-h-screen relative overflow-hidden selection:bg-white selection:text-black" id="step-0">
+
+    <!-- Ambient Background System -->
+    <div class="absolute inset-0 z-0 pointer-events-none">
+        <img
+            src="https://i.imgur.com/65f9UL5.jpeg"
+            alt="Night Market"
+            class="w-full h-full object-cover object-center opacity-75 scale-105"
+        />
+        <div class="absolute inset-0 bg-gradient-to-r from-[#050505]/90 via-[#050505]/50 to-transparent"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-[#050505]/80 via-transparent to-[#050505]/30"></div>
+        <div class="absolute -left-[10%] top-[20%] w-[50vw] h-[50vw] bg-gradient-to-br from-white/10 via-white/5 to-transparent rounded-full blur-[120px] ambient-glow mix-blend-screen"></div>
     </div>
 
-    <!-- Nav bar -->
-    <nav id="step0-nav">
-        <img src="https://i.imgur.com/p2qZOL5.png" alt="Canyon Activities Board Logo" id="step0-nav-logo" />
-        <span id="step0-nav-text">Canyon Activities Board</span>
-    </nav>
-
-    <!-- Hero content -->
-    <div id="step0-content">
-        <div id="step0-inner">
-            <!-- Badge pill -->
-            <div id="step0-badge">
-                <span id="step0-badge-dot"></span>
-                <span>Student Market</span>
-            </div>
-
-            <!-- Headline -->
-            <h1 id="step0-headline">
-                Vendor<br />
-                <span class="headline-gradient">Application</span>
-            </h1>
-
-            <!-- Student ID input -->
-            <div id="step0-id-wrap">
-                <label id="step0-id-label" for="form_student_id">Student ID Number</label>
-                <input
-                    type="tel"
-                    id="form_student_id"
-                    placeholder="Enter your Student ID"
-                    maxlength="8"
-                    inputmode="numeric"
-                    pattern="[0-9]*"
-                    autocomplete="off"
-                />
-            </div>
-
-            <!-- Action buttons -->
-            <div id="step0-actions">
-                <button id="step0-next-btn" onclick="nextPrev(1)" disabled>
-                    Start Application
-                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-                </button>
-                <button id="step0-status-btn" onclick="checkStatus()" disabled>
-                    Check Application Status
-                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                </button>
+    <!-- Minimalist Top Navigation -->
+    <nav class="relative z-20 w-full px-5 py-6 sm:py-8 sm:px-12 lg:px-24 flex justify-between items-center animate-fade-up">
+        <div class="flex items-center gap-4 md:gap-6">
+            <img src="https://i.imgur.com/p2qZOL5.png" alt="Canyon CAB Logo" class="h-9 sm:h-10 md:h-12 w-auto object-contain drop-shadow-lg opacity-90 hover:opacity-100 transition-opacity duration-300" />
+            <div class="hidden sm:flex items-center gap-4 text-xs font-semibold tracking-[0.3em] uppercase text-white/50">
+                Canyon Activities Board
             </div>
         </div>
-    </div>
+    </nav>
+
+    <!-- Main Hero Content -->
+    <main class="relative z-10 flex flex-col justify-center min-h-[calc(100vh-100px)] pb-10 sm:pb-0">
+        <div class="container mx-auto px-5 sm:px-12 lg:px-24 w-full">
+            <div class="max-w-3xl flex flex-col items-start text-left w-full">
+
+                <!-- Modern Glassmorphic Tag -->
+                <div class="animate-fade-up delay-100 mb-5 sm:mb-6 inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+                    <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-white animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.8)]"></span>
+                    <h2 class="text-[10px] sm:text-xs font-semibold tracking-[0.2em] uppercase text-white/80">
+                        Student Market
+                    </h2>
+                </div>
+
+                <!-- Ultra-Clean Bold Typography -->
+                <div class="animate-fade-up delay-200 mb-10 sm:mb-12">
+                    <h1 class="text-5xl sm:text-6xl lg:text-[5.5rem] font-extrabold uppercase tracking-tighter text-white leading-[0.9] drop-shadow-2xl">
+                        Vendor<br />
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/50">Application</span>
+                    </h1>
+                </div>
+
+                <!-- Form + Buttons -->
+                <div class="animate-fade-up delay-300 w-full max-w-md sm:max-w-xl">
+
+                    <!-- Student ID Input -->
+                    <div class="mb-6 w-full max-w-md">
+                        <input
+                            type="tel"
+                            id="form_student_id"
+                            placeholder="Enter your Student ID"
+                            maxlength="8"
+                            inputmode="numeric"
+                            pattern="[0-9]*"
+                            autocomplete="off"
+                            class="w-full bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl px-5 py-4 text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-white/30 focus:border-white/30 focus:bg-white/10 transition-all duration-300"
+                        />
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6 w-full">
+
+                        <!-- Primary Button -->
+                        <button
+                            id="step0-next-btn"
+                            onclick="nextPrev(1)"
+                            disabled
+                            class="group relative w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full font-semibold text-base overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-[0_8px_20px_rgba(147,51,234,0.3)] hover:shadow-[0_8px_30px_rgba(147,51,234,0.5)] flex justify-center flex-shrink-0 whitespace-nowrap">
+                            <div class="absolute inset-0 w-full h-full bg-gradient-to-r from-blue-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                            <span class="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
+                                Start Application
+                                <svg class="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                            </span>
+                        </button>
+
+                        <!-- Secondary Button -->
+                        <button
+                            id="step0-status-btn"
+                            onclick="checkStatus()"
+                            disabled
+                            class="group flex justify-center items-center gap-1.5 px-4 py-3 sm:py-2 text-sm font-medium text-white/60 hover:text-white transition-colors duration-300 flex-shrink-0 whitespace-nowrap bg-transparent border-none cursor-pointer">
+                            Check Application Status
+                            <svg class="w-4 h-4 opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </main>
 </div>
 
 <!-- Application Status Modal -->
