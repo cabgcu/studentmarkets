@@ -1,130 +1,1790 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vendor Application | Student Market</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>CAB Student Market Application</title>
 
-    <!-- Modern Typography Stack -->
+    <!-- Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Image Compression Library (client-side before sending to vendoradmin) -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js"></script>
+    <!-- Tailwind CSS (used by step-0 hero) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            /* V1 Survey UI Theme Colors */
+            --bg-dark: #000000;
+            --glass-surface: rgba(0, 0, 0, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.18);
+            --text-main: #ffffff;
+            --text-muted: #d1d1d6;
+            --gradient-accent: linear-gradient(135deg, #0A84FF, #BF5AF2);
+            --gradient-fire: linear-gradient(135deg, #FF9500, #FF3B30);
+            --gradient-success: linear-gradient(135deg, #34C759, #30B0C7);
+            --radius-card: 28px;
+            --radius-btn: 16px;
+            --blur-bg: 2px;
+            --blur-card: 12px;
+
+            /* App Specific Layout */
+            --max-width-content: 700px;
         }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+
         body {
-            font-family: var(--font-sans);
-            background-color: #050505;
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+            color: var(--text-main);
+            background-color: #0b0b0e;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: #444 transparent;
         }
 
-        /* Modern entry animations */
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; border: 2px solid var(--bg-dark); }
+
+        :focus-visible { outline: 3px solid #0A84FF; outline-offset: 3px; border-radius: 6px; }
+
+        /* Background (no bg image — step-0 hero handles its own bg) */
+        #bg-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; overflow: hidden;
+            background-color: #0b0b0e;
+        }
+        #bg-overlay { display: none; }
+
+        .app-container { position: relative; max-width: 1280px; margin: 0 auto; padding: 16px 12px; min-height: 100vh; display: flex; flex-direction: column; transition: all 0.4s ease; }
+        @media (min-width: 768px) { .app-container { padding: 40px 24px; } }
+
+        .view { display: none; opacity: 0; transform: translateY(10px); transition: 0.3s ease; width: 100%; }
+        .view.active { display: block; opacity: 1; transform: translateY(0); animation: fadeUp 0.4s ease forwards; }
+
+        .hero-banner { width: 100%; max-width: var(--max-width-content); margin: 0 auto 24px; border-radius: var(--radius-card); overflow: hidden; border: 1px solid var(--glass-border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); background: #111; line-height: 0; }
+        .hero-banner img { width: 100%; height: auto; display: block; }
+
+        /* Survey Card Styling */
+        .frosted {
+            background: #151518;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            border-radius: 16px;
         }
 
-        .animate-fade-up {
-            animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            opacity: 0;
+        .survey-card { width: 100%; max-width: var(--max-width-content); margin: 0 auto 30px; padding: 24px; }
+        @media (min-width: 768px) { .survey-card { padding: 40px; margin-bottom: 40px; } }
+
+        .section-header { font-size: 1.1rem; font-weight: 800; color: #ffffff; margin-bottom: 16px; margin-top: 24px; letter-spacing: 0.05em; display: flex; align-items: center; gap: 10px; }
+        .section-header::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.1); }
+
+        .form-group { margin-bottom: 24px; width: 100%; display: flex; flex-direction: column; height: 100%; }
+        .form-group > .control-item, .form-group > .custom-checkbox { margin-top: auto; }
+
+        /* V1 Typography */
+        .form-label { display: block; margin-bottom: 12px; color: var(--text-muted); font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.4; }
+        .form-hint { display: block; margin-top: 2px; margin-bottom: 10px; color: #a1a1aa; font-size: 0.8rem; line-height: 1.4; text-transform: none; font-weight: 500; letter-spacing: 0; }
+
+        .required-mark { color: #FF3B30; margin-left: 4px; font-weight: bold; }
+
+        /* V1 Survey Input Styling */
+        input.control-item, select.control-item, textarea.control-item {
+            width: 100%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+            color: #fff; padding: 16px 20px; border-radius: var(--radius-btn); font-family: inherit; font-size: 1rem;
+            outline: none; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .delay-100 { animation-delay: 100ms; }
-        .delay-200 { animation-delay: 200ms; }
-        .delay-300 { animation-delay: 300ms; }
+        .control-item:focus {
+            border-color: #0A84FF;
+            background: rgba(255,255,255,0.12);
+            box-shadow: 0 0 15px rgba(10, 132, 255, 0.4), 0 0 2px rgba(191, 90, 242, 0.4);
+            transform: scale(1.01);
+        }
 
-        /* Subtle background pulse for depth */
+        .autofilled-masked { color: #34C759 !important; font-style: italic; font-weight: 800 !important; background: rgba(52, 199, 89, 0.05) !important; border-color: rgba(52, 199, 89, 0.3) !important; }
+
+        input[type="file"].control-item { padding: 12px 18px; cursor: pointer; font-weight: 500; }
+        input[type="file"]::file-selector-button { border: none; background: rgba(255, 255, 255, 0.15); padding: 8px 16px; border-radius: 8px; color: #fff; cursor: pointer; margin-right: 15px; transition: 0.2s; font-weight: bold; }
+        input[type="file"]::file-selector-button:hover { background: rgba(255, 255, 255, 0.25); }
+
+        select.control-item { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 24px center; background-size: 16px; padding-right: 52px; cursor: pointer;}
+        select.control-item option { background-color: #111; color: #fff; }
+
+        textarea.control-item { min-height: 120px; resize: vertical; }
+
+        .custom-checkbox { display: flex; align-items: flex-start; gap: 12px; cursor: pointer; margin-bottom: 8px; font-size: 0.95rem; line-height: 1.5; color: #fff; background: rgba(255,255,255,0.04); padding: 14px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08); transition: 0.2s; width: 100%; font-weight: 500;}
+        .custom-checkbox:hover { background: rgba(255,255,255,0.08); border-color: rgba(255, 255, 255, 0.15); }
+        .custom-checkbox input { width: 22px; height: 22px; accent-color: #0A84FF; margin-top: 2px; flex-shrink: 0; cursor: pointer; }
+
+        .conditional-section { display: none; background: rgba(255, 255, 255, 0.03); border-left: 4px solid #0A84FF; padding: 18px; border-radius: 0 12px 12px 0; margin-bottom: 20px; animation: fadeUp 0.3s ease; }
+
+        /* V1 Button Styling */
+        .btn { padding: 18px 32px; border-radius: var(--radius-btn); font-weight: 700; cursor: pointer; border: none; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 1rem; width: 100%; }
+        @media (min-width: 768px) { .btn { width: auto; min-width: 250px;} }
+
+        .btn-primary { background: var(--gradient-accent); color: white; box-shadow: 0 10px 20px rgba(10, 132, 255, 0.2); }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(10, 132, 255, 0.4); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); min-width: auto;}
+        .btn-ghost:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+        .loader { display: none; width: 18px; height: 18px; border: 2px solid #fff; border-bottom-color: transparent; border-radius: 50%; animation: rotation 1s linear infinite; margin-left: 10px; }
+
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes ambientGlow {
             0%, 100% { transform: scale(1); opacity: 0.5; }
             50% { transform: scale(1.05); opacity: 0.7; }
         }
-        .ambient-glow {
+
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 16px 24px; border-radius: 100px; background: var(--gradient-success); font-weight: 700; z-index: 3000; display: none; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.5); color: #fff; }
+
+        footer { margin-top:auto; padding:60px 0 40px; text-align:center; color: rgba(255, 255, 255, 0.4); font-size: 0.75rem; letter-spacing: 0.05em; line-height: 1.6; }
+
+        .center-btn-wrapper { display: flex; justify-content: center; width: 100%; margin-top: 20px; }
+        .success-icon { width: 80px; height: 80px; background: var(--gradient-success); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 40px; color: white; box-shadow: 0 10px 20px rgba(52, 199, 89, 0.3); }
+        .survey-header-center { text-align: center; margin-bottom: 30px; }
+
+        .autofill-indicator { font-size: 0.8rem; color: #34C759; margin-top: 8px; font-weight: bold; background: rgba(52, 199, 89, 0.1); padding: 8px 12px; border-radius: 8px; display: inline-block; }
+
+        .dynamic-form-grid { display: grid; grid-template-columns: 1fr; gap: 32px; }
+        @media (min-width: 600px) {
+            .dynamic-form-grid { grid-template-columns: 1fr 1fr; gap: 40px 24px; }
+            .full-width { grid-column: 1 / -1; }
+            .half-width { grid-column: span 1; }
+            .dynamic-form-grid .form-group { margin-bottom: 0; }
+        }
+
+        #marketSelectionContainer { width: 100%; display: flex; flex-direction: column; gap: 12px; margin-bottom: 10px; }
+        .market-option { background: rgba(255,255,255,0.04); border: 1px solid rgba(255, 255, 255, 0.15); padding: 16px; border-radius: var(--radius-btn); display: flex; align-items: flex-start; gap: 12px; cursor: pointer; transition: 0.2s; }
+        .market-option:hover { background: rgba(255,255,255,0.08); }
+        .market-option.selected { border-color: #0A84FF; background: rgba(10, 132, 255, 0.1); box-shadow: 0 0 15px rgba(10, 132, 255, 0.2); transform: scale(1.01); }
+        .market-option input { width: 18px; height: 18px; accent-color: #0A84FF; margin-top: 2px; flex-shrink: 0; }
+        .market-name { font-weight: 800; color: #fff; font-size: 1.05rem; display: block; margin-bottom: 4px; }
+        .market-meta { font-size: 0.85rem; color: var(--text-muted); display: block; line-height: 1.5; font-weight: 500;}
+
+        /* Modals & Popups */
+        .modal { position: fixed; inset: 0; z-index: 1000; display: none; justify-content: center; align-items: center; padding: 16px; }
+        .modal.show { display: flex; }
+        .modal-bg { position: absolute; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); }
+        .modal-content { position: relative; width: 100%; max-width: 400px; background: #000; border-radius: 32px; padding: 32px; border: 1px solid var(--glass-border); text-align: center; }
+
+        /* Wizard Logic */
+        .form-step { display: none; opacity: 0; transform: translateY(10px); transition: 0.3s ease; }
+        .form-step.active { display: block; opacity: 1; transform: translateY(0); animation: fadeUp 0.4s ease forwards; }
+
+        /* =====================================================
+           STEP-0: Full-screen hero overlay
+           ===================================================== */
+        #step-0 {
+            position: fixed !important;
+            inset: 0 !important;
+            z-index: 50 !important;
+            display: none;
+            flex-direction: column !important;
+            background: #050505;
+            overflow: hidden;
+        }
+        #step-0.active {
+            display: flex !important;
+            opacity: 1 !important;
+            transform: none !important;
+        }
+
+        /* Hero background layers inside step-0 */
+        #step0-bg-image {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        #step0-bg-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            opacity: 0.75;
+            transform: scale(1.05);
+        }
+        #step0-gradient-left {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to right, rgba(5,5,5,0.9) 0%, rgba(5,5,5,0.5) 50%, transparent 100%);
+        }
+        #step0-gradient-bottom {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(5,5,5,0.8) 0%, transparent 50%, rgba(5,5,5,0.3) 100%);
+        }
+        #step0-ambient-glow {
+            position: absolute;
+            left: -10%;
+            top: 20%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(ellipse at center, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 40%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(80px);
+            mix-blend-mode: screen;
             animation: ambientGlow 8s ease-in-out infinite;
         }
+
+        /* Step-0 nav */
+        #step0-nav {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            padding: 24px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        @media (min-width: 640px) {
+            #step0-nav {
+                justify-content: flex-start;
+                padding: 32px 48px;
+            }
+        }
+        @media (min-width: 1024px) {
+            #step0-nav { padding: 32px 96px; }
+        }
+        #step0-nav-logo {
+            height: 36px;
+            width: auto;
+            object-fit: contain;
+            opacity: 0.9;
+            transition: opacity 0.3s;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+        }
+        #step0-nav-logo:hover { opacity: 1; }
+        #step0-nav-text {
+            display: none;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.5);
+            margin-left: 16px;
+        }
+        @media (min-width: 640px) { #step0-nav-text { display: block; } }
+
+        /* Step-0 hero content */
+        #step0-content {
+            position: relative;
+            z-index: 10;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 20px 20px 40px;
+        }
+        @media (min-width: 640px) {
+            #step0-content { padding: 20px 48px 60px; }
+        }
+        @media (min-width: 1024px) {
+            #step0-content { padding: 20px 96px 60px; }
+        }
+
+        #step0-inner {
+            max-width: 480px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        @media (min-width: 640px) {
+            #step0-inner {
+                align-items: flex-start;
+                text-align: left;
+            }
+        }
+
+        /* Step-0 badge pill */
+        #step0-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            margin-bottom: 20px;
+        }
+        #step0-badge-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: white;
+            box-shadow: 0 0 10px rgba(255,255,255,0.8);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        #step0-badge span {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.8);
+        }
+
+        /* Step-0 hero headline */
+        #step0-headline {
+            font-size: clamp(3rem, 8vw, 5.5rem);
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            line-height: 0.9;
+            color: white;
+            margin: 0 0 40px;
+            text-shadow: 0 4px 32px rgba(0,0,0,0.4);
+        }
+        #step0-headline .headline-gradient {
+            color: transparent;
+            -webkit-background-clip: text;
+            background-clip: text;
+            background-image: linear-gradient(to right, white, rgba(255,255,255,0.5));
+        }
+
+        /* Step-0 ID input */
+        #step0-id-wrap {
+            width: 100%;
+            max-width: 360px;
+            margin-bottom: 16px;
+        }
+        #step0-id-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        @media (min-width: 640px) { #step0-id-label { text-align: left; } }
+
+        #form_student_id {
+            width: 100%;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 14px;
+            padding: 16px 20px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 500;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+            text-align: center;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        #form_student_id::placeholder { color: rgba(255,255,255,0.25); }
+        #form_student_id:focus {
+            border-color: rgba(255,255,255,0.35);
+            background: rgba(255,255,255,0.1);
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.06);
+        }
+        @media (min-width: 640px) { #form_student_id { text-align: left; } }
+
+        /* Step-0 action buttons */
+        #step0-actions {
+            width: 100%;
+            max-width: 360px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: stretch;
+        }
+        @media (min-width: 640px) {
+            #step0-actions {
+                flex-direction: row;
+                align-items: center;
+            }
+        }
+
+        /* Primary "Start Application" button */
+        #step0-next-btn {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(to right, #2563eb, #9333ea);
+            color: white;
+            border: none;
+            border-radius: 999px;
+            padding: 14px 28px;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            cursor: pointer;
+            font-family: inherit;
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+            box-shadow: 0 8px 20px rgba(147,51,234,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex: 1;
+        }
+        #step0-next-btn:not(:disabled):hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 12px 30px rgba(147,51,234,0.5);
+        }
+        #step0-next-btn:not(:disabled):active { transform: scale(0.98); }
+        #step0-next-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        /* Secondary "Check Status" button */
+        #step0-status-btn {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.6);
+            border-radius: 999px;
+            padding: 14px 24px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.2s, color 0.2s, border-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        #step0-status-btn:not(:disabled):hover {
+            background: rgba(255,255,255,0.08);
+            color: white;
+            border-color: rgba(255,255,255,0.3);
+        }
+        #step0-status-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .arena-tag { display: none; }
+
+        .status-market-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 20px; margin-bottom: 16px; transition: all 0.3s ease; }
+        .status-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .status-name { font-weight: 800; font-size: 1.1rem; color: #fff; line-height: 1.2; text-align: left; }
+        .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 100px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+        .status-meta { font-size: 0.8rem; color: var(--text-muted); display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; margin-bottom: 16px; text-align: left;}
+        .resend-btn { width: 100%; background: rgba(10, 132, 255, 0.1); border: 1px solid rgba(10, 132, 255, 0.3); color: #0A84FF; padding: 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .resend-btn:hover { background: rgba(10, 132, 255, 0.2); border-color: #0A84FF; color: #fff; }
+
+        /* Wizard Logic */
+        .wizard-nav { display: flex; justify-content: center; gap: 15px; margin-top: 30px; width: 100%; }
+        .wizard-nav .btn { flex: 0 1 auto; width: auto; min-width: 140px; }
+        @media (max-width: 380px) { .wizard-nav .btn { min-width: 120px; font-size: 0.95rem; } }
+
+        #wizardProgress { text-align: center; margin-bottom: 20px; color: var(--text-muted); font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; display: none; }
+        .progress-dots { display: flex; justify-content: center; gap: 6px; margin-top: 8px; }
+        .progress-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2); transition: 0.3s; }
+        .progress-dot.active { background: #0A84FF; transform: scale(1.2); }
     </style>
 </head>
-<body class="text-white antialiased min-h-screen relative overflow-hidden selection:bg-white selection:text-black">
+<body>
 
-    <!-- Ambient Background System -->
-    <div class="fixed inset-0 z-0 pointer-events-none">
-        <!-- Base Image with scale for a cinematic feel -->
-        <img
-            src="https://i.imgur.com/65f9UL5.jpeg"
-            alt="Night Market"
-            class="w-full h-full object-cover object-center opacity-75 scale-105"
-        />
+<div id="bg-container"></div>
+<div id="bg-overlay"></div>
 
-        <!-- Modern Vignette & Gradient Masking -->
-        <div class="absolute inset-0 bg-gradient-to-r from-[#050505]/90 via-[#050505]/50 to-transparent"></div>
-        <div class="absolute inset-0 bg-gradient-to-t from-[#050505]/80 via-transparent to-[#050505]/30"></div>
+<div class="app-container" id="mainAppContainer">
 
-        <!-- Subtle Monochrome Ambient Glow (Mesh Gradient effect) -->
-        <div class="absolute -left-[10%] top-[20%] w-[50vw] h-[50vw] bg-gradient-to-br from-white/10 via-white/5 to-transparent rounded-full blur-[120px] ambient-glow mix-blend-screen"></div>
+    <div class="hero-banner" id="heroBanner" style="display:none;">
+        <img id="appHeaderImg" src="https://lh3.googleusercontent.com/d/177iu9igWGiUkD8vdJhZn80PXgLa6hM3c" alt="Student Market">
     </div>
 
-    <!-- Minimalist Top Navigation -->
-    <nav class="relative z-20 w-full px-5 py-6 sm:py-8 sm:px-12 lg:px-24 flex justify-center sm:justify-between items-center animate-fade-up">
-        <div class="flex items-center gap-4 md:gap-6">
-            <!-- Brand Logo -->
-            <img src="https://i.imgur.com/p2qZOL5.png" alt="Canyon CAB Logo" class="h-9 sm:h-10 md:h-12 w-auto object-contain drop-shadow-lg opacity-90 hover:opacity-100 transition-opacity duration-300" />
+    <!-- APPLICATION FORM VIEW (WIZARD) -->
+    <div id="applicationView" class="view active">
+        <div class="frosted survey-card" id="mainSurveyCard" style="display:none;">
 
-            <!-- Minimalist Text -->
-            <div class="hidden sm:flex items-center gap-4 text-xs font-semibold tracking-[0.3em] uppercase text-white/50">
-                Canyon Activities Board
+            <div id="wizardProgress">
+                Step <span id="currentStepNum">1</span> of <span id="totalStepNum">X</span>
+                <div class="progress-dots" id="progressDotsContainer"></div>
+            </div>
+
+            <form id="multiPageForm" onsubmit="return false;">
+
+                <!-- STEP 1: Market Selection -->
+                <div class="form-step" id="step-1">
+                    <div class="survey-header-center">
+                        <h3 style="margin-top:0; font-size: 1.5rem; letter-spacing: -0.02em; line-height: 1.2;">
+                            <span id="appTitle">Select Market</span>
+                        </h3>
+                        <div id="appDescContainer" style="color: var(--text-muted); margin: 12px auto; line-height: 1.5; font-size: 0.9rem; max-width: 95%;">
+                            <span id="appDesc">Loading available markets...</span>
+                        </div>
+                        <span style="font-size: 0.75rem; color: #FF3B30; font-weight: 700; text-transform: uppercase;">* Indicates required question</span>
+                    </div>
+
+                    <fieldset class="form-group full-width" style="margin-bottom:15px; border:none; padding:0; margin:0;">
+                        <legend class="form-label" id="lbl-market-selection" style="width:100%;">Which Market are you applying for?<span class="required-mark">*</span></legend>
+                        <div id="marketSelectionContainer"></div>
+
+                        <div id="lateAgreementContainer" style="display:none; background: rgba(255, 59, 48, 0.05); border: 1px solid rgba(255, 59, 48, 0.3); padding: 18px; border-radius: 16px; margin-top: 20px; animation: fadeUp 0.3s ease;">
+                            <label class="custom-checkbox" style="border-color: rgba(255, 59, 48, 0.4); background: rgba(0,0,0,0.5); margin-bottom: 0;">
+                                <input type="checkbox" id="lateAgreementCheck">
+                                <span style="color: #FF3B30; font-weight: 700; font-size: 0.85rem;">I acknowledge that I am applying PAST the official deadline. I understand that submitting this application counts as a Late Strike.</span>
+                            </label>
+                        </div>
+                    </fieldset>
+                </div>
+
+                <!-- DYNAMIC STEPS (Generated from Config) -->
+                <div id="dynamicStepsContainer"></div>
+
+                <!-- WIZARD NAVIGATION -->
+                <div class="wizard-nav" id="wizardNavContainer" style="display:none;">
+                    <button class="btn btn-ghost" id="prevBtn" onclick="nextPrev(-1)" style="display:none;">Previous</button>
+                    <button class="btn btn-primary" id="nextBtn" onclick="nextPrev(1)">Next</button>
+                    <button class="btn btn-primary" id="submitBtn" onclick="submitApplication()" style="display:none;">
+                        <span id="submitBtnText">Submit Application</span>
+                        <div class="loader" id="submitLoader"></div>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SUCCESS VIEW -->
+    <div id="successView" class="view">
+        <div class="frosted survey-card">
+            <div style="text-align: center;">
+                <div class="success-icon">✓</div>
+                <h2 style="margin-top:0; font-size: 1.8rem;" id="successGreeting">Application Received!</h2>
+                <p style="color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; font-size: 0.95rem;">
+                    Thank you for applying! Your application is now under review. Keep an eye on your email for updates.
+                </p>
+            </div>
+
+            <div id="summaryContainer" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 24px; margin: 0 auto 32px; max-width: 500px; text-align: center;">
+                <div id="summaryHeader" style="font-size: 1.1rem; font-weight: 800; color: #fff; margin-bottom: 24px; text-transform: uppercase; letter-spacing: 0.05em; text-align: center;">
+                    Submission Summary
+                </div>
+                <div id="summaryContent"></div>
+            </div>
+
+            <div class="center-btn-wrapper">
+                <button class="btn btn-primary" onclick="window.location.reload()">Return to Start</button>
             </div>
         </div>
+    </div>
+
+    <footer>
+        © 2026 Canyon Activities Board <br>
+    </footer>
+</div>
+
+<!-- STEP 0: Full-screen hero (outside mainSurveyCard, fixed overlay) -->
+<div class="form-step active" id="step-0">
+    <!-- Background layers -->
+    <div id="step0-bg-image">
+        <img src="https://i.imgur.com/65f9UL5.jpeg" alt="Night Market" />
+        <div id="step0-gradient-left"></div>
+        <div id="step0-gradient-bottom"></div>
+        <div id="step0-ambient-glow"></div>
+    </div>
+
+    <!-- Nav bar -->
+    <nav id="step0-nav">
+        <img src="https://i.imgur.com/p2qZOL5.png" alt="Canyon Activities Board Logo" id="step0-nav-logo" />
+        <span id="step0-nav-text">Canyon Activities Board</span>
     </nav>
 
-    <!-- Main Hero Content -->
-    <main class="relative z-10 flex flex-col justify-center min-h-[calc(100vh-100px)] pb-10 sm:pb-0">
-        <div class="container mx-auto px-5 sm:px-12 lg:px-24 w-full">
-            <div class="max-w-3xl flex flex-col items-center sm:items-start text-center sm:text-left w-full">
+    <!-- Hero content -->
+    <div id="step0-content">
+        <div id="step0-inner">
+            <!-- Badge pill -->
+            <div id="step0-badge">
+                <span id="step0-badge-dot"></span>
+                <span>Student Market</span>
+            </div>
 
-                <!-- Modern Glassmorphic Tag -->
-                <div class="animate-fade-up delay-100 mb-5 sm:mb-6 inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
-                    <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-white animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.8)]"></span>
-                    <h2 class="text-[10px] sm:text-xs font-semibold tracking-[0.2em] uppercase text-white/80">
-                        Student Market
-                    </h2>
-                </div>
+            <!-- Headline -->
+            <h1 id="step0-headline">
+                Vendor<br />
+                <span class="headline-gradient">Application</span>
+            </h1>
 
-                <!-- Ultra-Clean Bold Typography -->
-                <div class="animate-fade-up delay-200 mb-10 sm:mb-12">
-                    <h1 class="text-5xl sm:text-6xl lg:text-[5.5rem] font-extrabold uppercase tracking-tighter text-white leading-[0.9] drop-shadow-2xl text-center sm:text-left">
-                        Vendor<br />
-                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/50">Application</span>
-                    </h1>
-                </div>
+            <!-- Student ID input -->
+            <div id="step0-id-wrap">
+                <label id="step0-id-label" for="form_student_id">Student ID Number</label>
+                <input
+                    type="tel"
+                    id="form_student_id"
+                    placeholder="Enter your Student ID"
+                    maxlength="8"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    autocomplete="off"
+                />
+            </div>
 
-                <!-- 2026 Style Call to Action (Optimized for Mobile Touch) -->
-                <div class="animate-fade-up delay-300 flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
-
-                    <!-- Primary Button: Blue/Purple Gradient -->
-                    <a
-                        href="./apply.html"
-                        class="group relative w-full sm:w-auto px-8 py-4 sm:py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full font-semibold text-base overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-[0_8px_20px_rgba(147,51,234,0.3)] hover:shadow-[0_8px_30px_rgba(147,51,234,0.5)] flex justify-center">
-                        <!-- Hover glow effect behind text -->
-                        <div class="absolute inset-0 w-full h-full bg-gradient-to-r from-blue-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        <span class="relative z-10 flex items-center justify-center gap-2">
-                            Start Application
-                            <svg class="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-                        </span>
-                    </a>
-
-                    <!-- Secondary Button: Sleek Ghost Link -->
-                    <a
-                        href="./apply.html?mode=status"
-                        class="group flex justify-center items-center gap-1.5 px-4 py-3 sm:py-2 text-sm font-medium text-white/60 hover:text-white transition-colors duration-300">
-                        Check Application Status
-                        <svg class="w-4 h-4 opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                    </a>
-                </div>
-
+            <!-- Action buttons -->
+            <div id="step0-actions">
+                <button id="step0-next-btn" onclick="nextPrev(1)" disabled>
+                    Start Application
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </button>
+                <button id="step0-status-btn" onclick="checkStatus()" disabled>
+                    Check Application Status
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                </button>
             </div>
         </div>
-    </main>
+    </div>
+</div>
 
+<!-- Application Status Modal -->
+<div id="statusModal" class="modal">
+    <div class="modal-bg" onclick="document.getElementById('statusModal').classList.remove('show')"></div>
+    <div class="modal-content" style="max-width: 500px; text-align: left;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+            <h3 style="margin:0; font-size: 1.4rem; font-weight: 800; text-transform: uppercase; letter-spacing: -0.02em;">My Applications</h3>
+            <button onclick="document.getElementById('statusModal').classList.remove('show')" style="background:rgba(255,255,255,0.05); border:none; color:#fff; width:32px; height:32px; border-radius:50%; cursor:pointer; line-height: 32px; text-align:center;">&times;</button>
+        </div>
+        <div id="statusModalContent" style="max-height: 60vh; overflow-y: auto; padding-right: 5px; scrollbar-width: none;"></div>
+    </div>
+</div>
+
+<div id="toast">Update Successful</div>
+
+<script>
+    // ========================================================
+    // STUDENT MARKETS PUBLIC FORM - API CLIENT
+    // ========================================================
+    // This form delegates ALL data operations to vendoradmin
+    // via postMessage API through a hidden iframe.
+    // No direct Supabase access - vendoradmin is the backend.
+    // ========================================================
+
+    // --- Configuration ---
+    // Detect vendoradmin URL based on deployment environment
+    function getVendorAdminURL() {
+        // Check if explicitly set in localStorage (for custom deployments)
+        const savedURL = localStorage.getItem('VENDORADMIN_URL');
+        if (savedURL) return savedURL;
+
+        const origin = window.location.origin;
+        const pathname = window.location.pathname;
+
+        // GitHub Pages: https://cabgcu.github.io/studentmarkets/ → https://cabgcu.github.io/vendoradmin/
+        if (origin.includes('github.io')) {
+            return origin + '/vendoradmin/';
+        }
+
+        // Same domain: /studentmarkets/ → /vendoradmin/
+        if (pathname.includes('/studentmarkets')) {
+            return origin + pathname.replace('/studentmarkets', '/vendoradmin') + '/';
+        }
+
+        // Netlify/Vercel: vendoradmin.site → studentmarkets.site (assume subdomain)
+        // Try replacing 'studentmarkets' with 'vendoradmin' in the domain
+        if (origin.includes('studentmarkets')) {
+            return origin.replace('studentmarkets', 'vendoradmin') + '/';
+        }
+
+        // Local development fallback
+        return 'http://localhost:8000/';
+    }
+
+    const VENDORADMIN_URL = getVendorAdminURL();
+
+    // --- API Bridge ---
+    let _apiBridge = null;
+    let _apiReady = false;
+    let _apiCallbacks = {};
+
+    async function initApiBridge() {
+        return new Promise((resolve, reject) => {
+            console.log('[StudentMarkets] Loading vendoradmin from:', VENDORADMIN_URL);
+            _apiBridge = document.createElement('iframe');
+            _apiBridge.src = VENDORADMIN_URL;
+            _apiBridge.style.display = 'none';
+            _apiBridge.sandbox.add('allow-same-origin', 'allow-scripts');
+
+            const timeoutId = setTimeout(() => {
+                reject(new Error('Vendoradmin bridge failed to load. Check that VENDORADMIN_URL is correct.'));
+            }, 10000);
+
+            _apiBridge.onload = () => {
+                clearTimeout(timeoutId);
+                _apiReady = true;
+                console.log('[StudentMarkets] Vendoradmin bridge loaded successfully');
+                resolve();
+            };
+
+            _apiBridge.onerror = () => {
+                clearTimeout(timeoutId);
+                reject(new Error('Failed to load vendoradmin iframe. Check CORS and URL configuration.'));
+            };
+
+            document.body.appendChild(_apiBridge);
+
+            window.addEventListener('message', (e) => {
+                const { type, requestId, result, error } = e.data || {};
+                if (!type || !type.endsWith('_RESP')) return;
+                if (_apiCallbacks[requestId]) {
+                    if (error) _apiCallbacks[requestId].reject(new Error(error));
+                    else _apiCallbacks[requestId].resolve(result);
+                    delete _apiCallbacks[requestId];
+                }
+            });
+        });
+    }
+
+    function apiCall(type, payload = {}) {
+        return new Promise((resolve, reject) => {
+            const requestId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2, 12);
+            _apiCallbacks[requestId] = { resolve, reject };
+            _apiBridge.contentWindow.postMessage({ type, requestId, payload }, '*');
+            setTimeout(() => {
+                if (_apiCallbacks[requestId]) {
+                    delete _apiCallbacks[requestId];
+                    reject(new Error('API timeout'));
+                }
+            }, 30000);
+        });
+    }
+
+    // --- UTILITIES ---
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // --- VENDOR CONFIRMATION FLOW ENGINE ---
+    window.addEventListener('DOMContentLoaded', async () => {
+        try {
+            await initApiBridge();
+        } catch (err) {
+            console.error('[StudentMarkets] Bridge initialization failed:', err);
+            showToast('Unable to connect to vendor admin. Check configuration. Error: ' + err.message, true);
+            return;
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const confirmId = urlParams.get('confirm');
+        const confirmPowerId = urlParams.get('confirm_power');
+        const declinePowerId = urlParams.get('decline_power');
+
+        if (confirmId) {
+            handleVendorConfirmation(confirmId);
+        } else if (confirmPowerId) {
+            handlePowerConfirmation(confirmPowerId, 'confirm');
+        } else if (declinePowerId) {
+            handlePowerConfirmation(declinePowerId, 'decline');
+        }
+    });
+
+    // --- AUTOFILL PRIVACY LISTENERS ---
+    document.addEventListener('focusin', (e) => {
+        if (e.target.classList && e.target.classList.contains('autofilled-masked') && e.target.value === 'Information on File') {
+            e.target.value = '';
+            e.target.classList.remove('autofilled-masked');
+            if (e.target.dataset.originalType) {
+                e.target.type = e.target.dataset.originalType;
+            }
+        }
+    });
+
+    document.addEventListener('focusout', (e) => {
+        if (e.target.dataset && e.target.dataset.wasMasked === 'true') {
+            if (e.target.value.trim() === '') {
+                e.target.type = 'text';
+                e.target.value = 'Information on File';
+                e.target.classList.add('autofilled-masked');
+            } else if (e.target.value.trim() !== 'Information on File') {
+                delete e.target.dataset.autofilled;
+                delete e.target.dataset.wasMasked;
+            }
+        }
+    });
+
+    function getParsedNotes(noteStr) {
+        if (!noteStr || noteStr.trim() === '') return [];
+        try {
+            const parsed = JSON.parse(noteStr);
+            if (Array.isArray(parsed)) return parsed;
+        } catch (e) {}
+
+        return [{
+            id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2, 9),
+            date: new Date().toISOString(),
+            text: noteStr,
+            author: 'Legacy Data',
+            type: 'legacy'
+        }];
+    }
+
+    async function handleVendorConfirmation(id, action) {
+        try {
+            const mainApp = document.getElementById('mainAppContainer');
+            if (mainApp) mainApp.style.display = 'none';
+            const step0 = document.getElementById('step-0');
+            if (step0) step0.style.display = 'none';
+
+            const msgDiv = document.createElement('div');
+            msgDiv.id = 'confirmation-loading-screen';
+            msgDiv.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#050505; color:white; font-family:var(--font-stack); z-index:999999;";
+            msgDiv.innerHTML = `<div class="spinner" style="margin-bottom:20px; width:40px; height:40px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.2); border-top-color: #34C759; animation: spin 1s linear infinite;"></div><h2 style="font-weight:800;">Confirming your attendance...</h2>
+            <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>`;
+            document.body.appendChild(msgDiv);
+
+            await apiCall('SM_CONFIRM_ATTENDANCE', { vendorId: id });
+
+            msgDiv.innerHTML = `
+                <div style="font-size: 5rem; color: #34C759; margin-bottom: 20px; text-shadow: 0 0 30px rgba(52, 199, 89, 0.4);">✓</div>
+                <h2 style="color:#34C759; margin-bottom: 15px; font-weight:800; font-size:2.5rem;">Confirmed!</h2>
+                <p style="color:var(--text-muted); font-size:1.1rem; max-width:400px; text-align:center;">Your attendance has been successfully recorded. We look forward to seeing you at the market!</p>
+            `;
+
+        } catch (err) {
+            console.error("Confirmation Error:", err);
+            const errDiv = document.getElementById('confirmation-loading-screen');
+            if (errDiv) {
+                errDiv.innerHTML = `
+                    <div style="font-size: 4rem; color: #FF3B30; margin-bottom: 20px;">✕</div>
+                    <h2 style="color:#FF3B30; font-weight:800; margin-bottom:10px;">System Error</h2>
+                    <p style="color:#a1a1aa; text-align:center; max-width: 400px;">${err.message || 'We could not process your confirmation automatically. Please reply directly to the email to confirm your attendance.'}</p>
+                `;
+            }
+        }
+    }
+
+    async function handlePowerConfirmation(id, action) {
+        try {
+            const mainApp = document.getElementById('mainAppContainer');
+            if (mainApp) mainApp.style.display = 'none';
+            const step0 = document.getElementById('step-0');
+            if (step0) step0.style.display = 'none';
+
+            const isConfirming = action === 'confirm';
+            const accentColor = isConfirming ? '#0A84FF' : '#FF9500';
+
+            const msgDiv = document.createElement('div');
+            msgDiv.id = 'confirmation-loading-screen';
+            msgDiv.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#050505; color:white; font-family:var(--font-stack); z-index:999999;";
+            msgDiv.innerHTML = `<div class="spinner" style="margin-bottom:20px; width:40px; height:40px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.2); border-top-color: ${accentColor}; animation: spin 1s linear infinite;"></div><h2 style="font-weight:800;">${isConfirming ? 'Confirming power request...' : 'Updating power status...'}</h2>
+            <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>`;
+            document.body.appendChild(msgDiv);
+
+            const apiType = isConfirming ? 'SM_CONFIRM_POWER' : 'SM_DECLINE_POWER';
+            await apiCall(apiType, { vendorId: id });
+
+            if (isConfirming) {
+                msgDiv.innerHTML = `
+                    <div style="font-size: 5rem; color: #0A84FF; margin-bottom: 20px; text-shadow: 0 0 30px rgba(10, 132, 255, 0.4);">⚡</div>
+                    <h2 style="color:#0A84FF; margin-bottom: 15px; font-weight:800; font-size:2.2rem;">Power Confirmed!</h2>
+                    <p style="color:var(--text-muted); font-size:1.1rem; max-width:400px; text-align:center;">Your power request has been confirmed. Please remember to bring your own extension cords to the market!</p>
+                `;
+            } else {
+                msgDiv.innerHTML = `
+                    <div style="font-size: 5rem; color: #FF9500; margin-bottom: 20px; text-shadow: 0 0 30px rgba(255, 149, 0, 0.4);">🔌</div>
+                    <h2 style="color:#FF9500; margin-bottom: 15px; font-weight:800; font-size:2.2rem;">Power Released</h2>
+                    <p style="color:var(--text-muted); font-size:1.1rem; max-width:400px; text-align:center;">Your power spot has been released. You're still confirmed for the market — just without a power source. Thank you for letting us know!</p>
+                `;
+            }
+
+        } catch (err) {
+            console.error("Power Confirmation Error:", err);
+            const errDiv = document.getElementById('confirmation-loading-screen');
+            if (errDiv) {
+                errDiv.innerHTML = `
+                    <div style="font-size: 4rem; color: #FF3B30; margin-bottom: 20px;">✕</div>
+                    <h2 style="color:#FF3B30; font-weight:800; margin-bottom:10px;">System Error</h2>
+                    <p style="color:#a1a1aa; text-align:center; max-width: 400px;">${err.message || 'We could not process your power status. Please reply directly to the email to update us.'}</p>
+                `;
+            }
+        }
+    }
+
+    let allEventsData = [];
+    let currentTab = 0;
+    let isNavigating = false;
+    let isAppClosed = false;
+    let marketConfigV3 = {};
+
+    const defaultQuestions = [
+        { id: 'section_personal', type: 'section_header', label: 'Personal Information', width: 'full', isCore: true },
+        { id: 'student_id', type: 'number', label: 'Student ID Number', hint: 'Type your ID and tap Next to auto-fill your info!', required: true, width: 'full', isCore: true },
+        { id: 'full_name_combined', type: 'text', label: 'First and Last Name', hint: '', required: true, width: 'full', isCore: false },
+        { id: 'preferred_email', type: 'email', label: 'Preferred Email', hint: 'Vendor confirmation emails will be sent to your preferred email!', required: true, width: 'full', isCore: true },
+        { id: 'gcu_email', type: 'email', label: 'GCU Email', hint: '', required: true, width: 'full', isCore: true },
+        { id: 'phone', type: 'tel', label: 'Phone Number', hint: '', required: true, width: 'half', isCore: true },
+        { id: 'communication_method', type: 'dropdown', label: 'Preferred Communication Method', hint: '', options: 'Email, Text', required: true, width: 'half', isCore: true },
+        { id: 'year', type: 'dropdown', label: 'What year are you at GCU?', hint: '', options: 'Freshman, Sophomore, Junior, Senior', required: true, width: 'half', isCore: true },
+        { id: 'availability', type: 'dropdown', label: 'Will you be available for the duration of the market?', hint: '', options: 'Yes, No', required: true, width: 'half', isCore: true },
+
+        { id: 'section_vendor', type: 'section_header', label: 'Vendor Details', width: 'full', isCore: true },
+        { id: 'food_license', type: 'dropdown', label: 'If you are selling food, do you have your food handlers\' license?', hint: '', options: 'Yes, No, Not applicable', required: true, width: 'full', isCore: true },
+        { id: 'past_vendor', type: 'dropdown', label: 'Have you ever worked with CAB at a student market before?', hint: '', options: 'Yes, No', required: true, width: 'full', isCore: true },
+        { id: 'description', type: 'textarea', label: 'Vendor/Project Description', hint: '', required: true, width: 'full', isCore: true },
+        { id: 'link', type: 'text', label: 'Social Media Handle or Website', hint: 'This is not your personal social media account...', required: true, width: 'full', isCore: true },
+
+        { id: 'section_logistics', type: 'section_header', label: 'Electricity Vendors', width: 'full', isCore: true },
+        { id: 'needs_power', type: 'dropdown', label: 'Do you need to be by an outlet or have access to a power source?', hint: '', options: 'Yes, No', required: true, width: 'full', isCore: true },
+
+        { id: 'section_agreements', type: 'section_header', label: 'Check the boxes to acknowledge', width: 'full', isCore: false },
+        { id: 'agree_liability', type: 'checkbox_single', label: 'Liability Acknowledgment', hint: 'I acknowledge that CAB and Grand Canyon University are not responsible...', required: true, width: 'full', isCore: false },
+        { id: 'agree_taxes', type: 'checkbox_single', label: 'Taxes Acknowledgment', hint: 'I acknowledge that as the seller I am fully responsible for claiming income...', required: true, width: 'full', isCore: false },
+        { id: 'agree_safety', type: 'checkbox_single', label: 'Safety Acknowledgment', hint: 'I acknowledge that if I as a vendor cannot maintain a safe...', required: true, width: 'full', isCore: false },
+        { id: 'agree_terms', type: 'checkbox_single', label: 'Terms Acknowledgment', hint: 'By applying for student market you acknowledge our terms...', required: true, width: 'full', isCore: false },
+        { id: 'agree_media', type: 'checkbox_single', label: 'Media Acknowledgment', hint: 'I acknowledge and accept that GCU Student Engagement...', required: true, width: 'full', isCore: false },
+        { id: 'additional_comments', type: 'textarea', label: 'Additional Comments or Requests', hint: '', required: false, width: 'full', isCore: true }
+    ];
+
+    let formConfig = { headerUrl: "https://lh3.googleusercontent.com/d/177iu9igWGiUkD8vdJhZn80PXgLa6hM3c", questions: [], forceStatus: 'auto', eventTitle: null, eventDesc: null };
+
+    window.onload = async () => {
+        await loadConfig();
+        await loadEvents();
+
+        const _urlParams = new URLSearchParams(window.location.search);
+        const _isStatusMode = _urlParams.get('mode') === 'status';
+
+        if (_isStatusMode) {
+            const alertP = document.querySelector('#step-0 #step0-inner #step0-id-wrap + #step0-actions');
+            // Update the headline area and button text for status mode
+            const step0Btn = document.getElementById('step0-next-btn');
+            if (step0Btn) {
+                step0Btn.innerHTML = 'Check Status <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>';
+                step0Btn.onclick = () => checkStatus();
+            }
+            // Update headline
+            const headline = document.getElementById('step0-headline');
+            if (headline) {
+                headline.innerHTML = 'Check<br><span class="headline-gradient">Status</span>';
+            }
+        }
+
+        document.getElementById('form_student_id').addEventListener('input', () => {
+            const idInput = document.getElementById('form_student_id');
+            const step0Btn = document.getElementById('step0-next-btn');
+            const statusBtn = document.getElementById('step0-status-btn');
+
+            if (idInput && step0Btn) {
+                const isValid = idInput.value.trim().length >= 3;
+                if (_isStatusMode) {
+                    step0Btn.disabled = !isValid;
+                } else if (isAppClosed) {
+                    step0Btn.disabled = true;
+                } else {
+                    step0Btn.disabled = !isValid;
+                }
+                if (statusBtn) {
+                    statusBtn.disabled = !isValid;
+                }
+            }
+        });
+    };
+
+    function updateClosedUI(msg) {
+        document.getElementById('marketSelectionContainer').innerHTML = '<div style="color:#FF3B30">Applications are currently closed.</div>';
+        document.getElementById('nextBtn').disabled = true;
+        document.getElementById('appDesc').innerHTML = msg;
+
+        const step0Btn = document.getElementById('step0-next-btn');
+        if (step0Btn) {
+            step0Btn.disabled = true;
+            step0Btn.innerHTML = 'Applications Closed <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>';
+        }
+    }
+
+    async function loadEvents() {
+        try {
+            const data = await apiCall('SM_LOAD_EVENTS');
+            const container = document.getElementById('marketSelectionContainer');
+            const lblMarketSelection = document.getElementById('lbl-market-selection');
+
+            if (!data || data.length === 0) {
+                isAppClosed = true;
+                updateClosedUI("There are currently no active application windows.");
+                return;
+            }
+
+            allEventsData = data;
+            const now = new Date();
+
+            let openMarkets = data.filter(e => {
+                const evConfig = marketConfigV3[String(e.id)] || {};
+                const status = evConfig.forceStatus || 'auto';
+
+                if (status === 'closed') return false;
+                if (status === 'open') return true;
+
+                const isPastOpen = !e.app_open || new Date(e.app_open) <= now;
+                const isBeforeClose = !e.app_close || new Date(e.app_close) >= now;
+                return isPastOpen && isBeforeClose;
+            });
+
+            if (openMarkets.length === 0) {
+                isAppClosed = true;
+                updateClosedUI("There are currently no active application windows. Please check back later!");
+            } else {
+                isAppClosed = false;
+                document.getElementById('nextBtn').disabled = false;
+
+                openMarkets.sort((a, b) => new Date(a.market_date) - new Date(b.market_date));
+
+                if (openMarkets.length > 1) {
+                    if (formConfig.eventTitle) document.getElementById('appTitle').innerHTML = formConfig.eventTitle;
+
+                    let descHtml = "";
+                    if (formConfig.eventDesc) {
+                        descHtml += formConfig.eventDesc + "<br><br>";
+                    }
+                    descHtml += "<strong>Select one or more markets below to apply:</strong>";
+
+                    document.getElementById('appDesc').innerHTML = descHtml;
+                    document.getElementById('appDescContainer').style.display = 'block';
+
+                    lblMarketSelection.innerHTML = 'Which Markets are you applying for? <span style="text-transform:none; font-weight:normal; font-size:0.85rem; color:var(--text-muted); display:block; margin-top:4px;">Select a market to apply (can apply to multiple)</span><span class="required-mark">*</span>';
+                } else {
+                    const singleMarket = openMarkets[0];
+                    const specificConfig = marketConfigV3[String(singleMarket.id)] || {};
+
+                    document.getElementById('appTitle').innerHTML = specificConfig.title || singleMarket.name || formConfig.eventTitle || "Vendor Application";
+
+                    let descHtml = specificConfig.description || singleMarket.description || formConfig.eventDesc || "";
+                    if (descHtml) {
+                        document.getElementById('appDesc').innerHTML = descHtml;
+                        document.getElementById('appDescContainer').style.display = 'block';
+                    } else {
+                        document.getElementById('appDesc').innerHTML = ''; // Clear so it's empty
+                        document.getElementById('appDescContainer').style.display = 'none';
+                    }
+
+                    lblMarketSelection.innerHTML = 'Which Market are you applying for? <span style="text-transform:none; font-weight:normal; font-size:0.85rem; color:var(--text-muted); display:block; margin-top:4px;">Select the market below to apply</span><span class="required-mark">*</span>';
+                }
+
+                container.innerHTML = openMarkets.map(e => {
+                    const d = new Date(e.market_date + 'T12:00:00');
+                    const formattedDate = d.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+                    const formattedClose = e.app_close ? new Date(e.app_close).toLocaleString() : 'TBD';
+                    const isLate = e.app_close && new Date(e.app_close) < now;
+
+                    return `
+                    <label class="market-option" id="label_market_${e.id}" for="chk_market_${e.id}">
+                        <input type="checkbox" id="chk_market_${e.id}" name="marketChoice" value="${e.id}" data-is-late="${isLate}" onchange="updateMarketSelectionUI()">
+                        <div class="market-info-text">
+                            <span class="market-name">${e.name}</span>
+                            <span class="market-meta">
+                                <strong>Date of Market:</strong> ${formattedDate}<br>
+                                <strong>Time:</strong> ${e.market_time || '6:30-9:30pm'}<br>
+                                <strong>Location:</strong> ${e.location}<br>
+                                <span style="color: ${isLate ? '#FF3B30' : 'var(--text-muted)'}; font-size: 0.75rem; display: inline-block; margin-top: 4px;">
+                                    ${isLate ? '<strong>🚨 PAST DEADLINE</strong>' : `This application closes on ${formattedClose}`}
+                                </span>
+                                ${isLate ? `<span style="color: #FF3B30; font-size: 0.75rem; font-weight: bold; display: block; margin-top: 4px; line-height: 1.3;">Submitting now will result in 1 Late Strike. 3 Strikes = Banned.</span>` : ''}
+                            </span>
+                        </div>
+                    </label>`;
+                }).join('');
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    function updateMarketSelectionUI() {
+        const checkboxes = document.querySelectorAll('input[name="marketChoice"]:checked');
+        const availLabel = document.querySelector('[id="lbl-form_availability"]');
+        let hasLate = false;
+
+        document.querySelectorAll('input[name="marketChoice"]').forEach(cb => {
+            const label = document.getElementById(`label_market_${cb.value}`);
+            if (cb.checked) {
+                label.classList.add('selected');
+                if (cb.getAttribute('data-is-late') === 'true') hasLate = true;
+            } else {
+                label.classList.remove('selected');
+            }
+        });
+
+        const lateContainer = document.getElementById('lateAgreementContainer');
+        if (lateContainer) {
+            lateContainer.style.display = hasLate ? 'block' : 'none';
+        }
+
+        if (availLabel) {
+            if (checkboxes.length === 0) {
+                availLabel.innerHTML = 'WILL YOU BE AVAILABLE FOR THE DURATION OF THE MARKET?<span class="required-mark">*</span>';
+            } else if (checkboxes.length === 1) {
+                availLabel.innerHTML = 'WILL YOU BE AVAILABLE FOR THE FULL DURATION OF THE SELECTED MARKET?<span class="required-mark">*</span>';
+            } else {
+                availLabel.innerHTML = 'WILL YOU BE AVAILABLE FOR THE FULL DURATION OF ALL SELECTED MARKETS?<span class="required-mark">*</span>';
+            }
+        }
+    }
+
+    async function loadConfig() {
+        try {
+            const cfg = await apiCall('SM_LOAD_CONFIG');
+            formConfig = cfg;
+            marketConfigV3 = cfg.marketConfigV3 || {};
+            renderPublicForm();
+        } catch (e) {
+            console.error("Failed to load config:", e);
+            formConfig = { headerUrl: "https://lh3.googleusercontent.com/d/177iu9igWGiUkD8vdJhZn80PXgLa6hM3c", questions: JSON.parse(JSON.stringify(defaultQuestions)), forceStatus: 'auto' };
+            renderPublicForm();
+        }
+    }
+
+    function generateFieldHtml(q) {
+        let inputHtml = '';
+        let common = `id="form_${q.id}" class="control-item"`;
+        if (q.type === 'textarea') inputHtml = `<textarea ${common}></textarea>`;
+        else if (q.type === 'dropdown') {
+            const opts = (q.options || '').split(',').map(o => `<option value="${o.trim()}">${o.trim()}</option>`).join('');
+            let trigger = q.id==='food_license' ? 'onchange="toggleFoodLicense();toggleConditionalChildren(this)"' : 'onchange="toggleConditionalChildren(this)"';
+            inputHtml = `<select ${common} ${trigger}><option value="">Select...</option>${opts}</select>`;
+        } else if (q.type === 'checkbox_single') {
+            inputHtml = `<label class="custom-checkbox"><input type="checkbox" id="form_${q.id}" onchange="toggleConditionalChildren(this)"><span>${q.hint || q.label}</span></label>`;
+        } else {
+            let placeholderAttr = q.id === 'student_id' ? 'placeholder="e.g. 1234567"' : '';
+            inputHtml = `<input type="${q.type}" ${common} ${placeholderAttr} autocomplete="off" />`;
+        }
+
+        let hintHtml = q.hint && q.type !== 'checkbox_single' ? `<span class="form-hint">${q.hint}</span>` : '';
+        let lbl = `<label class="form-label" id="lbl-form_${q.id}">${q.label}${q.required?'<span class="required-mark">*</span>':''}${hintHtml}</label>`;
+        let htmlString = `<div class="form-group ${q.width === 'half' ? 'half-width' : 'full-width'}">${lbl}${inputHtml}</div>`;
+
+        if (q.id === 'food_license') htmlString += `<div id="foodLicenseUploadSection" class="conditional-section full-width"><label class="form-label">Upload AZ food handlers license!<span class="required-mark">*</span></label><input type="hidden" id="formFoodLicenseLinkHidden"><div id="existingLicenseLink"></div><input type="file" id="formFoodLicenseFile" class="control-item" accept="image/*" /></div>`;
+        return htmlString;
+    }
+
+    // Map of parent question index → array of child question IDs (built during render)
+    let conditionalChildrenMap = {};
+
+    function renderPublicForm() {
+        document.getElementById('appHeaderImg').src = formConfig.headerUrl;
+        const dynamicStepsContainer = document.getElementById('dynamicStepsContainer');
+        dynamicStepsContainer.innerHTML = '';
+        let currentStepDiv = null;
+        let currentGrid = null;
+        conditionalChildrenMap = {};
+
+        formConfig.questions.forEach((q, i) => {
+            if (q.id === 'student_id') return;
+            if (q.type === 'section_header') {
+                if (currentStepDiv) dynamicStepsContainer.appendChild(currentStepDiv);
+                currentStepDiv = document.createElement('div');
+                currentStepDiv.className = 'form-step';
+                currentStepDiv.innerHTML = `<div class="survey-header-center"><h3 style="margin-top:0; margin-bottom: 15px; font-size: 1.4rem;">${q.label}</h3></div>`;
+                currentGrid = document.createElement('div');
+                currentGrid.className = 'dynamic-form-grid';
+                currentStepDiv.appendChild(currentGrid);
+                return;
+            }
+            if (!currentStepDiv) {
+                currentStepDiv = document.createElement('div');
+                currentStepDiv.className = 'form-step';
+                currentGrid = document.createElement('div');
+                currentGrid.className = 'dynamic-form-grid';
+                currentStepDiv.appendChild(currentGrid);
+            }
+
+            // Handle both old condition format (single) and new conditions format (array)
+            // Migrate old format to new format
+            let conditions = q.conditions || [];
+            if (q.condition && !q.conditions) {
+                conditions = [q.condition];
+            }
+
+            // If this question has conditions, wrap it in conditional-section div
+            if (conditions && conditions.length > 0) {
+                // For multiple conditions, all must be true (AND logic)
+                // Generate data attributes for each condition
+                let condData = conditions.map((cond, idx) => {
+                    const parentQ = formConfig.questions[cond.parentIndex];
+                    if (parentQ) {
+                        // Register in the children map so the parent can toggle it
+                        if (!conditionalChildrenMap[parentQ.id]) conditionalChildrenMap[parentQ.id] = [];
+                        conditionalChildrenMap[parentQ.id].push({ childId: q.id, triggerValue: cond.value, condIndex: idx });
+                        return `data-cond-parent-${idx}="${parentQ.id}" data-cond-value-${idx}="${cond.value}"`;
+                    }
+                    return '';
+                }).filter(Boolean).join(' ');
+
+                if (condData) {
+                    currentGrid.innerHTML += `<div class="conditional-section full-width" ${condData} data-cond-count="${conditions.length}" style="display:none;">${generateFieldHtml(q)}</div>`;
+                    return;
+                }
+            }
+            currentGrid.innerHTML += generateFieldHtml(q);
+        });
+        if (currentStepDiv) dynamicStepsContainer.appendChild(currentStepDiv);
+        currentTab = 0;
+        showTab(currentTab);
+    }
+
+    // Toggle visibility of conditional child questions when a parent value changes
+    function toggleConditionalChildren(el) {
+        const fieldId = el.id.replace('form_', '');
+        const children = conditionalChildrenMap[fieldId];
+        if (!children) return;
+
+        // Get current value: for checkboxes it's Yes/No, for dropdowns it's the selected value
+        const parentQ = formConfig.questions.find(q => q.id === fieldId);
+        let currentVal;
+        if (parentQ && parentQ.type === 'checkbox_single') {
+            currentVal = el.checked ? 'Yes' : 'No';
+        } else {
+            currentVal = el.value;
+        }
+
+        children.forEach(({ childId, triggerValue, condIndex }) => {
+            // Find all conditional sections that include this child
+            const allConditionals = document.querySelectorAll(`.conditional-section`);
+            allConditionals.forEach(wrapper => {
+                // Check if this wrapper includes the condition we're looking for
+                const parentAttr = wrapper.getAttribute(`data-cond-parent-${condIndex || 0}`);
+                const valueAttr = wrapper.getAttribute(`data-cond-value-${condIndex || 0}`);
+
+                if (parentAttr === fieldId) {
+                    // Now check all conditions for this wrapper are met
+                    const condCount = parseInt(wrapper.getAttribute('data-cond-count') || '1');
+                    let allConditionsMet = true;
+
+                    for (let i = 0; i < condCount; i++) {
+                        const pAttr = wrapper.getAttribute(`data-cond-parent-${i}`);
+                        const vAttr = wrapper.getAttribute(`data-cond-value-${i}`);
+
+                        if (pAttr) {
+                            const parentEl = document.getElementById('form_' + pAttr);
+                            if (parentEl) {
+                                const parentQ2 = formConfig.questions.find(q => q.id === pAttr);
+                                let condVal;
+                                if (parentQ2 && parentQ2.type === 'checkbox_single') {
+                                    condVal = parentEl.checked ? 'Yes' : 'No';
+                                } else {
+                                    condVal = parentEl.value;
+                                }
+                                if (condVal !== vAttr) {
+                                    allConditionsMet = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    wrapper.style.display = allConditionsMet ? 'block' : 'none';
+                }
+            });
+        });
+    }
+
+    function showTab(n) {
+        // n===0 is the hero step-0 (fixed overlay); steps 1+ are inside mainSurveyCard
+        const step0El = document.getElementById('step-0');
+        const mainCard = document.getElementById('mainSurveyCard');
+        const heroBanner = document.getElementById('heroBanner');
+        const wizardNav = document.getElementById('wizardNavContainer');
+        const progressEl = document.getElementById('wizardProgress');
+
+        if (n === 0) {
+            // Show full-screen hero
+            step0El.style.display = 'flex';
+            step0El.classList.add('active');
+            mainCard.style.display = 'none';
+            heroBanner.style.display = 'none';
+            wizardNav.style.display = 'none';
+            progressEl.style.display = 'none';
+            return;
+        }
+
+        // Hide hero, show form card
+        step0El.style.display = 'none';
+        step0El.classList.remove('active');
+        mainCard.style.display = '';
+        heroBanner.style.display = 'none';
+        wizardNav.style.display = 'flex';
+
+        // The form steps inside the card (step-1 onward): index into form-step elements
+        // We need to map tab index (1-based) to form-step elements (excluding step-0)
+        let x = document.getElementsByClassName("form-step");
+        // x includes step-0 at some position; find only those inside the card
+        const cardSteps = Array.from(x).filter(el => el.id !== 'step-0');
+
+        for (let i = 0; i < cardSteps.length; i++) {
+            cardSteps[i].style.display = 'none';
+            cardSteps[i].classList.remove('active');
+        }
+        // n=1 maps to cardSteps[0], n=2 to cardSteps[1], etc.
+        const stepIdx = n - 1;
+        if (cardSteps[stepIdx]) {
+            cardSteps[stepIdx].style.display = 'block';
+            setTimeout(() => cardSteps[stepIdx].classList.add('active'), 10);
+        }
+
+        if (cardSteps.length > 0) {
+            progressEl.style.display = 'block';
+            document.getElementById('currentStepNum').innerText = n;
+            document.getElementById('totalStepNum').innerText = cardSteps.length;
+            let dotsHtml = '';
+            for (let i = 0; i < cardSteps.length; i++) dotsHtml += `<div class="progress-dot ${i === stepIdx ? 'active' : ''}"></div>`;
+            document.getElementById('progressDotsContainer').innerHTML = dotsHtml;
+        }
+
+        const isLast = stepIdx === cardSteps.length - 1;
+        document.getElementById("nextBtn").style.display = isLast ? "none" : "inline-flex";
+        document.getElementById("submitBtn").style.display = isLast ? "inline-flex" : "none";
+        document.getElementById("prevBtn").style.display = n > 1 ? "inline-flex" : "none";
+    }
+
+    async function nextPrev(n) {
+        if (isNavigating) return;
+        isNavigating = true;
+
+        if (n === 1 && !validateForm(currentTab)) {
+            isNavigating = false;
+            return;
+        }
+        if (currentTab === 0 && n === 1) {
+            let step0Btn = document.getElementById('step0-next-btn');
+            let origHTML = step0Btn.innerHTML;
+            step0Btn.innerHTML = 'Verifying...';
+            await checkExistingVendor();
+            step0Btn.innerHTML = origHTML;
+        }
+        currentTab = currentTab + n;
+        if (currentTab < 0) currentTab = 0;
+        showTab(currentTab);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        isNavigating = false;
+    }
+
+    function validateForm(tabIndex) {
+        if (tabIndex === 0) {
+            // Step 0: just need a student ID of sufficient length
+            const idVal = document.getElementById('form_student_id').value.trim();
+            if (idVal.length < 3) {
+                showToast("Please enter your Student ID.", true);
+                return false;
+            }
+            return true;
+        }
+
+        // For steps 1+, map tabIndex to cardStep element
+        const cardSteps = Array.from(document.getElementsByClassName("form-step")).filter(el => el.id !== 'step-0');
+        const stepIdx = tabIndex - 1;
+        let x = cardSteps[stepIdx];
+        if (!x) return true;
+
+        if (x.id === 'step-1') {
+            const selected = document.querySelectorAll('input[name="marketChoice"]:checked');
+            if (selected.length === 0) {
+                showToast("Please select at least one market to apply to.", true);
+                return false;
+            }
+
+            const lateContainer = document.getElementById('lateAgreementContainer');
+            const lateCheck = document.getElementById('lateAgreementCheck');
+            if (lateContainer && lateContainer.style.display === 'block' && !lateCheck.checked) {
+                showToast("Please acknowledge the Late Strike warning.", true);
+                return false;
+            }
+
+            return true;
+        }
+        let inputs = x.querySelectorAll('input, select, textarea');
+        for (let i = 0; i < inputs.length; i++) {
+            let input = inputs[i];
+            if (input.closest('.conditional-section') && input.closest('.conditional-section').style.display === 'none') continue;
+            let idMatch = input.id.match(/^form_(.+)$/);
+            if (idMatch) {
+                let fieldId = idMatch[1];
+                let q = formConfig.questions.find(q => q.id === fieldId);
+
+                let val = input.value.trim();
+
+                if (input.dataset && input.dataset.autofilled && val === 'Information on File') {
+                    val = input.dataset.autofilled;
+                }
+
+                if (q && q.required) {
+                    let labelEl = document.getElementById('lbl-form_' + q.id);
+                    let displayLabel = labelEl ? labelEl.innerText.replace('*', '').split('\n')[0].trim() : q.label;
+
+                    if (q.type === 'checkbox_single') {
+                        if (!input.checked) { showToast(`Please agree to: ${displayLabel}`, true); return false; }
+                    } else if (val === "") {
+                        showToast(`Please answer: ${displayLabel}`, true); input.focus(); return false;
+                    }
+                }
+
+                if (q && q.type === 'email' && val !== "") {
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(val)) {
+                        showToast(`Please enter a valid email format.`, true);
+                        input.focus();
+                        return false;
+                    }
+
+                    if (q.id === 'gcu_email') {
+                        const lowerVal = val.toLowerCase();
+                        if (!lowerVal.endsWith('@my.gcu.edu') && !lowerVal.endsWith('@gcu.edu')) {
+                            showToast(`GCU Email must end with @my.gcu.edu or @gcu.edu`, true);
+                            input.focus();
+                            return false;
+                        }
+                    }
+                }
+            }
+            if (input.id === 'formFoodLicenseFile') {
+                 const needsLicense = document.getElementById('form_food_license')?.value === 'Yes';
+                 const hasExisting = document.getElementById('formFoodLicenseLinkHidden')?.value;
+                 if (needsLicense && !hasExisting && !input.files[0]) { showToast("Please upload your food handlers license.", true); return false; }
+            }
+        }
+        return true;
+    }
+
+    function generateSummary(selectedIds, payload) {
+        const container = document.getElementById('summaryContent');
+        if (!container) return;
+
+        const marketNames = selectedIds.map(id => {
+            const mkt = allEventsData.find(e => String(e.id) === String(id));
+            return mkt ? mkt.name : 'Selected Market';
+        });
+
+        const marketLabelsHtml = marketNames.map(m => `
+            <div style="background: rgba(10, 132, 255, 0.15); border: 1px solid rgba(10, 132, 255, 0.3); color: #fff; padding: 10px 18px; border-radius: 12px; font-weight: 700; font-size: 1rem; display: inline-block; margin: 6px; box-shadow: 0 4px 15px rgba(10,132,255,0.1);">
+                ${m}
+            </div>
+        `).join('');
+
+        container.innerHTML = `
+            <div style="margin-bottom: 30px;">
+                <span style="color: var(--text-muted); font-size: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 16px;">Markets Applied For</span>
+                <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;">
+                    ${marketLabelsHtml}
+                </div>
+            </div>
+            <div style="margin-bottom: 24px; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
+                <span style="display:block; margin-bottom:6px; color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">Applicant</span>
+                <span style="display:block; font-size: 1.3rem; font-weight: 800; color: #fff;">${payload.first_name} ${payload.last_name}</span>
+            </div>
+            <div style="background: rgba(52, 199, 89, 0.1); padding: 20px; border-radius: 20px; border: 1px solid rgba(52, 199, 89, 0.2);">
+                <span style="display:block; margin-bottom:6px; color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">Application Status</span>
+                <span style="color: #34C759; margin-bottom:0; font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span style="width: 10px; height: 10px; background: #34C759; border-radius: 50%; box-shadow: 0 0 10px #34C759;"></span> Received & In Review
+                </span>
+            </div>
+        `;
+    }
+
+    async function checkStatus() {
+        const id = document.getElementById('form_student_id').value.trim();
+        if (id.length < 3) return;
+        const btn = document.getElementById('step0-status-btn');
+        const origHTML = btn.innerHTML;
+        btn.innerHTML = 'Verifying ID...';
+        btn.disabled = true;
+
+        try {
+            const { apps, events } = await apiCall('SM_CHECK_STATUS', { studentId: id });
+            if (!apps || apps.length === 0) {
+                showToast("No records found for this ID.", true);
+                btn.innerHTML = origHTML;
+                btn.disabled = false;
+                return;
+            }
+            const now = new Date();
+            now.setHours(0,0,0,0);
+            const upcomingEvents = events.filter(e => new Date(e.market_date + 'T00:00:00') >= now);
+
+            const matchedApps = apps.map(app => {
+                const event = upcomingEvents.find(ev => ev.id === app.event_id);
+                if (!event) return null;
+                let displayStatus = 'In Review';
+
+                if (app.email_sent && app.email_sent !== 'No') {
+                    if (app.status === 'Approved' || app.status === 'Checked In') displayStatus = 'Approved';
+                    else if (app.status === 'Denied') displayStatus = 'Denied';
+                }
+                return { ...app, eventName: event.name, eventDate: event.market_date, eventLoc: event.location, eventTime: event.market_time, contactDate: event.contact_date, displayStatus };
+            }).filter(Boolean);
+
+            if (matchedApps.length === 0) {
+                showToast("No upcoming applications found.", true);
+                return;
+            }
+
+            let html = '';
+            matchedApps.forEach(a => {
+                const d = new Date(a.eventDate + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+                const contactD = a.contactDate ? new Date(a.contactDate + 'T12:00:00').toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'}) : 'TBA';
+
+                let color = '#FF9500'; let icon = '⏳';
+                if (a.displayStatus === 'Approved') { color = '#34C759'; icon = '✅'; }
+                if (a.displayStatus === 'Denied') { color = '#FF3B30'; icon = '❌'; }
+
+                const canResend = (a.email_sent && a.email_sent !== 'No');
+
+                html += `
+                    <div class="status-market-card">
+                        <div class="status-header">
+                            <div class="status-name">${a.eventName}</div>
+                            <div class="status-badge" style="background: ${color}22; border: 1px solid ${color}55; color: ${color};">
+                                ${icon} ${a.displayStatus}
+                            </div>
+                        </div>
+                        <div class="status-meta">
+                            <span style="opacity: 0.5;">🗓️ Date</span> <span>${d}</span>
+                            <span style="opacity: 0.5;">⏰ Time</span> <span>${a.eventTime || 'TBA'}</span>
+                            <span style="opacity: 0.5;">📍 Place</span> <span>${a.eventLoc || 'TBA'}</span>
+                        </div>
+                        ${canResend ? `
+                            <button id="resend-${a.id}" class="resend-btn" onclick="resendStatusEmail('${a.id}', '${a.event_id}')">
+                                📩 Resend Status Email
+                            </button>
+                        ` : `
+                            <div style="font-size: 0.75rem; color: #FF9500; font-weight: 700; text-align: center; padding: 10px; background: rgba(255,149,0,0.05); border-radius: 12px; line-height: 1.4;">
+                                Application is in review.<br>
+                                <span style="opacity: 0.8; font-weight: 500;">Status emails will be sent out on <strong>${contactD}</strong></span>
+                            </div>
+                        `}
+                    </div>
+                `;
+            });
+            document.getElementById('statusModalContent').innerHTML = html;
+            document.getElementById('statusModal').classList.add('show');
+        } catch (e) { console.error(e); showToast("System error", true); }
+        finally { btn.innerHTML = origHTML; btn.disabled = false; }
+    }
+
+    async function resendStatusEmail(appId, eventId) {
+        const btn = document.getElementById(`resend-${appId}`);
+        const origHtml = btn.innerHTML;
+        btn.innerHTML = 'Sending Email...';
+        btn.disabled = true;
+
+        try {
+            const publicFormUrl = window.location.href.split('?')[0].split('#')[0];
+            await apiCall('SM_RESEND_EMAIL', { appId, eventId, publicFormUrl });
+            showToast("✨ Email resent successfully!", false);
+        } catch(e) {
+            console.error(e);
+            showToast("Resend failed: " + (e.message || 'Unknown error'), true);
+        } finally {
+            btn.innerHTML = origHtml;
+            btn.disabled = false;
+        }
+    }
+
+    async function checkExistingVendor() {
+        const id = document.getElementById('form_student_id').value.trim();
+        if(id.length < 4) return false;
+        try {
+            const data = await apiCall('SM_CHECK_EXISTING_VENDOR', { studentId: id });
+            if(data && data[0]) {
+                const v = data[0];
+                formConfig.questions.forEach(q => {
+                    const el = document.getElementById('form_'+q.id);
+                    if(el && q.id !== 'additional_comments' && q.id !== 'student_id') {
+                        // Check autofill flag - skip if autofill is disabled
+                        if (q.autofill === false) return;
+
+                        // Special handling for food_license: only autofill if license link exists
+                        if (q.id === 'food_license') {
+                            if (!v.food_license_link || v.food_license_link.trim() === '' || v.food_license_link === 'Deleted to save space' || v.food_license_link === 'Archived Google Drive Link') {
+                                // Food license file is not available, ask user to resubmit
+                                return;
+                            }
+                        }
+
+                        let actualVal = '';
+                        if (q.id === 'full_name_combined') actualVal = (v.first_name + ' ' + v.last_name).trim();
+                        else if (v[q.id]) actualVal = v[q.id];
+                        else if (q.id === 'food_license' && v.custom_answers) {
+                            try {
+                                const customAnswersObj = JSON.parse(v.custom_answers);
+                                if (customAnswersObj && customAnswersObj[q.id]) actualVal = customAnswersObj[q.id];
+                            } catch(e) {}
+                        }
+
+                        if (actualVal) {
+                            if (['full_name_combined', 'preferred_email', 'gcu_email', 'phone'].includes(q.id)) {
+                                el.dataset.autofilled = actualVal;
+                                el.dataset.originalType = el.type || 'text';
+                                el.type = 'text';
+                                el.value = 'Information on File';
+                                el.classList.add('autofilled-masked');
+                                el.dataset.wasMasked = 'true';
+                            } else {
+                                el.value = actualVal;
+                            }
+                        }
+                    }
+                });
+                if (v.food_license_link && !v._food_license_needs_resubmit) {
+                    document.getElementById('formFoodLicenseLinkHidden').value = v.food_license_link;
+                    document.getElementById('existingLicenseLink').innerHTML = `<div style="color:#34C759; font-size:0.85rem; margin:10px 0; font-weight:800; background:rgba(52,199,89,0.1); padding:10px; border-radius:10px; border:1px solid rgba(52,199,89,0.2);">✅ Verified license found on file.</div>`;
+                } else if (v._food_license_needs_resubmit) {
+                    document.getElementById('existingLicenseLink').innerHTML = `<div style="color:#FF3B30; font-size:0.85rem; margin:10px 0; font-weight:800; background:rgba(255,59,48,0.1); padding:10px; border-radius:10px; border:1px solid rgba(255,59,48,0.2);">🚨 Your previous food license could not be verified. Please re-upload it below.</div>`;
+                }
+                toggleFoodLicense();
+                // Trigger all conditional children based on autofilled values
+                formConfig.questions.forEach(aq => {
+                    if (aq.type === 'dropdown' || aq.type === 'checkbox_single') {
+                        const ael = document.getElementById('form_' + aq.id);
+                        if (ael) toggleConditionalChildren(ael);
+                    }
+                });
+                showToast("✨ Profile auto-filled!", false);
+                return true;
+            }
+        } catch(e) {}
+        return false;
+    }
+
+    async function submitApplication() {
+        if(!validateForm(currentTab)) return;
+        const selectedIds = Array.from(document.querySelectorAll('input[name="marketChoice"]:checked')).map(cb => cb.value);
+        const btn = document.getElementById('submitBtn');
+        const submitBtnText = document.getElementById('submitBtnText');
+        const submitLoader = document.getElementById('submitLoader');
+
+        const basePayload = { status: 'Pending', email_sent: 'No', first_name: '', last_name: '' };
+        let agreements = [];
+        let customAnswers = {};
+
+        // Standard database columns (don't change without updating DB schema)
+        const dbColumns = new Set(['student_id', 'first_name', 'last_name', 'preferred_email', 'gcu_email', 'phone',
+                                   'communication_method', 'year', 'availability', 'food_license', 'past_vendor',
+                                   'description', 'link', 'needs_power', 'food_license_link', 'additional_comments']);
+
+        for(let q of formConfig.questions) {
+            if(q.type==='section_header') continue;
+            const el = document.getElementById('form_'+q.id);
+            if(!el) continue;
+
+            let val = q.type==='checkbox_single' ? (el.checked?'Yes':'No') : el.value.trim();
+
+            if (el.dataset && el.dataset.autofilled && val === 'Information on File') {
+                val = el.dataset.autofilled;
+            }
+
+            if(q.id === 'full_name_combined') {
+                const parts = val.split(' ');
+                basePayload.first_name = parts[0] || val;
+                basePayload.last_name = parts.slice(1).join(' ') || '.';
+                continue;
+            }
+
+            // Handle checkboxes - they go to agreements array
+            if (q.type === 'checkbox_single') {
+                if (el.checked) {
+                    agreements.push(q.label);
+                }
+            }
+            // Save to normal DB columns if field exists there
+            else if (dbColumns.has(q.id)) {
+                basePayload[q.id] = val;
+            }
+            // Save custom questions to JSON field (allows unlimited custom questions)
+            else {
+                customAnswers[q.id] = val;
+            }
+        }
+
+        // Store custom answers as JSON string
+        if (Object.keys(customAnswers).length > 0) {
+            basePayload.custom_answers = JSON.stringify(customAnswers);
+        }
+
+        if (document.getElementById('lateAgreementContainer')?.style.display === 'block' && document.getElementById('lateAgreementCheck')?.checked) {
+            agreements.push("Late Application Strike Acknowledgment");
+        }
+
+        basePayload.agreements_checked = JSON.stringify(agreements);
+
+        btn.disabled = true;
+        submitBtnText.innerText = "Processing...";
+        submitLoader.style.display = "inline-block";
+
+        try {
+            if (basePayload.food_license==='Yes') {
+                const file = document.getElementById('formFoodLicenseFile').files[0];
+                const existing = document.getElementById('formFoodLicenseLinkHidden').value;
+                if(file) {
+                    submitBtnText.innerText = "Compressing Image...";
+                    const compressedFile = await compressImage(file);
+
+                    submitBtnText.innerText = "Uploading License...";
+                    // Convert to data URL for postMessage
+                    const fileDataUrl = await new Promise(resolve => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.readAsDataURL(compressedFile);
+                    });
+                    const uploadResult = await apiCall('SM_UPLOAD_LICENSE', { fileData: fileDataUrl });
+                    basePayload.food_license_link = uploadResult.url;
+                } else {
+                    basePayload.food_license_link = existing;
+                }
+            }
+
+            submitBtnText.innerText = "Saving Application...";
+            basePayload.additional_comments = document.getElementById('form_additional_comments')?.value.trim() || '';
+
+            await apiCall('SM_SUBMIT_APPLICATION', { basePayload, selectedIds });
+
+            generateSummary(selectedIds, basePayload);
+
+            switchView('success');
+            if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#0A84FF', '#BF5AF2'] });
+        } catch(e) {
+            console.error(e);
+            showToast("Submission failed: " + (e.message || 'Unknown error'), true);
+        } finally {
+            btn.disabled = false;
+            submitBtnText.innerText = "Submit Application";
+            submitLoader.style.display = "none";
+        }
+    }
+
+    function toggleFoodLicense() { let s = document.getElementById('foodLicenseUploadSection'); if(s) s.style.display = document.getElementById('form_food_license').value==='Yes'?'block':'none'; }
+    function switchView(v) { document.querySelectorAll('.view').forEach(e => e.classList.remove('active')); document.getElementById(v + 'View').classList.add('active'); window.scrollTo(0,0); }
+    function showToast(m, e) { const t = document.getElementById('toast'); t.innerText = m; t.style.background = e ? 'var(--gradient-fire)' : 'var(--gradient-success)'; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 4000); }
+
+    async function compressImage(file) {
+        const options = {
+            maxSizeMB: 0.4,
+            maxWidthOrHeight: 1200,
+            useWebWorker: true,
+            initialQuality: 0.7
+        };
+
+        try {
+            console.log(`Original image size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+            const compressedFile = await imageCompression(file, options);
+            console.log(`Compressed image size: ${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`);
+            return compressedFile;
+        } catch (error) {
+            console.error("Image compression error:", error);
+            return file;
+        }
+    }
+</script>
 </body>
 </html>
