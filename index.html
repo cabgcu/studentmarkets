@@ -1018,10 +1018,19 @@
         // Inject edit-mode CSS
         const style = document.createElement('style');
         style.textContent = `
-            /* Compact hero so form is visible below */
-            #step-0 { min-height: 0 !important; height: 260px !important; overflow: hidden !important; }
+            /* Unfix hero so form card flows below it in the document */
+            #step-0 {
+                position: relative !important;
+                inset: auto !important;
+                width: 100% !important;
+                height: 260px !important;
+                min-height: 0 !important;
+                overflow: hidden !important;
+                z-index: 1 !important;
+                display: flex !important;
+            }
             /* Show form card and all steps expanded */
-            #mainSurveyCard { display: block !important; }
+            #mainSurveyCard { display: block !important; margin-top: 0 !important; }
             .form-step { display: block !important; opacity: 1 !important; transform: none !important; }
             #wizardNavContainer, #wizardProgress { display: none !important; }
             /* Editable elements */
