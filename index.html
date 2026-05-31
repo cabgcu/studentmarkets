@@ -970,68 +970,136 @@
         window.parent.postMessage({ type: 'SM_EDIT_UPDATE', payload: { updates } }, '*');
     }
 
+    let _smInlineEditor = null;
+
+    function showInlineEditor(anchorEl, labelText, currentValue, onSave, placeholder) {
+        if (_smInlineEditor) { _smInlineEditor.remove(); _smInlineEditor = null; }
+
+        const ed = document.createElement('div');
+        ed.style.cssText = 'position:fixed;z-index:99999;background:#111;border:1px solid rgba(59,130,246,0.5);border-radius:12px;padding:12px;box-shadow:0 8px 32px rgba(0,0,0,0.7);min-width:300px;max-width:440px;';
+        ed.innerHTML = `<div style="font-size:0.6rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:7px;">${labelText}</div><input type="text" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:8px 12px;border-radius:8px;font-size:0.9rem;outline:none;font-family:inherit;box-sizing:border-box;" placeholder="${placeholder||''}"><div style="font-size:0.62rem;color:rgba(255,255,255,0.25);margin-top:6px;">Enter to save · Esc to cancel</div>`;
+
+        document.body.appendChild(ed);
+        _smInlineEditor = ed;
+
+        // Position below (or above) anchor
+        const rect = anchorEl.getBoundingClientRect();
+        let top = rect.bottom + 10;
+        if (top + 90 > window.innerHeight) top = Math.max(8, rect.top - 90);
+        let left = rect.left;
+        if (left + 320 > window.innerWidth) left = window.innerWidth - 328;
+        ed.style.top = top + 'px';
+        ed.style.left = Math.max(8, left) + 'px';
+
+        const inp = ed.querySelector('input');
+        inp.value = currentValue;
+        inp.focus();
+        inp.select();
+
+        function commit() {
+            const val = inp.value.trim();
+            if (val !== currentValue) onSave(val);
+            ed.remove(); _smInlineEditor = null;
+        }
+        inp.addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.preventDefault(); commit(); }
+            if (e.key === 'Escape') { ed.remove(); _smInlineEditor = null; }
+        });
+        // Click outside to commit
+        setTimeout(() => {
+            function outside(e) {
+                if (!ed.contains(e.target)) { commit(); document.removeEventListener('click', outside, true); }
+            }
+            document.addEventListener('click', outside, true);
+        }, 50);
+    }
+
     function enableEditMode() {
-        // Inject edit mode CSS
+        // Inject edit-mode CSS
         const style = document.createElement('style');
-        style.id = 'sm-edit-mode-styles';
         style.textContent = `
-            [data-sm-editable] { cursor: text !important; transition: outline 0.15s; }
-            [data-sm-editable]:hover { outline: 2px solid rgba(59,130,246,0.55) !important; outline-offset: 3px; border-radius: 3px; }
-            [data-sm-editable]:focus { outline: 2px solid #0A84FF !important; outline-offset: 3px; border-radius: 3px; background: rgba(10,132,255,0.07) !important; }
-            #step0-bg-img { cursor: pointer !important; transition: opacity 0.2s; }
-            #step0-bg-img:hover { opacity: 0.55 !important; }
-            .control-item, select.control-item { pointer-events: none !important; opacity: 0.7; }
-            .custom-checkbox input { pointer-events: none !important; }
-            .sm-edit-label { display: block; font-size: 0.58rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(59,130,246,0.7); text-align: center; padding: 3px 0 0; }
+            /* Compact hero so form is visible below */
+            #step-0 { min-height: 0 !important; height: 260px !important; overflow: hidden !important; }
+            /* Show form card and all steps expanded */
+            #mainSurveyCard { display: block !important; }
+            .form-step { display: block !important; opacity: 1 !important; transform: none !important; }
+            #wizardNavContainer, #wizardProgress { display: none !important; }
+            /* Editable elements */
+            [data-sm-editable] { cursor: pointer !important; }
+            [data-sm-editable][contenteditable="true"] { cursor: text !important; }
+            [data-sm-editable]:hover { outline: 2px solid rgba(59,130,246,0.6) !important; outline-offset: 2px; border-radius: 3px; }
+            [data-sm-editable][contenteditable="true"]:focus { outline: 2px solid #0A84FF !important; outline-offset: 2px; border-radius: 3px; background: rgba(10,132,255,0.06) !important; }
+            /* Disable actual form controls so they don't distract */
+            .control-item, select.control-item, textarea.control-item { pointer-events: none !important; opacity: 0.55; }
+            .custom-checkbox input[type=checkbox] { pointer-events: none !important; }
+            /* Background click hint */
+            #step0-bg-img { cursor: pointer !important; }
+            #step0-bg-img:hover { opacity: 0.5 !important; }
+            #step0-headline { cursor: pointer !important; }
+            #step0-headline:hover { opacity: 0.8 !important; }
+            .sm-click-hint { position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:10px;color:rgba(255,255,255,0.4);background:rgba(0,0,0,0.5);padding:2px 10px;border-radius:20px;pointer-events:none;white-space:nowrap; }
         `;
         document.head.appendChild(style);
 
-        // Show edit mode indicator
+        // Edit-mode badge
         const badge = document.createElement('div');
-        badge.style.cssText = 'position:fixed;top:12px;right:12px;z-index:9999;background:rgba(10,132,255,0.9);color:#fff;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:0.5px;backdrop-filter:blur(8px);pointer-events:none;';
+        badge.style.cssText = 'position:fixed;top:10px;right:10px;z-index:99999;background:rgba(10,132,255,0.92);color:#fff;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:0.5px;pointer-events:none;';
         badge.textContent = '✎ Edit Mode';
         document.body.appendChild(badge);
 
-        // Hero title — click to edit
+        // Show survey card and ALL form steps (bypass wizard)
+        const surveyCard = document.getElementById('mainSurveyCard');
+        if (surveyCard) surveyCard.style.display = 'block';
+        document.querySelectorAll('.form-step').forEach(el => {
+            el.style.display = 'block';
+            el.style.opacity = '1';
+            el.style.transform = 'none';
+        });
+
+        // Hero title — floating inline editor on click (prompt() blocked in iframes)
         const headline = document.getElementById('step0-headline');
         if (headline) {
             headline.setAttribute('data-sm-editable', '');
-            headline.title = 'Click to edit title';
+            const hint = document.createElement('div');
+            hint.className = 'sm-click-hint';
+            hint.textContent = '✎ click to edit title';
+            headline.style.position = 'relative';
+            headline.appendChild(hint);
             headline.addEventListener('click', () => {
-                const current = formConfig.heroTitle || headline.innerText.replace(/\n/g,' ').trim();
-                const val = prompt('Hero title (last word gets gradient style):', current);
-                if (val !== null && val.trim()) {
-                    formConfig.heroTitle = val.trim();
+                const current = formConfig.heroTitle || headline.innerText.replace(/\n/g,' ').replace(/\s+/g,' ').trim();
+                showInlineEditor(headline, 'Hero Title (last word gets gradient)', current, val => {
+                    formConfig.heroTitle = val;
                     applyHeroConfig();
-                    sendEditUpdate({ heroTitle: val.trim() });
-                }
+                    sendEditUpdate({ heroTitle: val });
+                });
             });
         }
 
-        // Background image — click to change
+        // Background image — floating inline editor on click
         const bgImg = document.getElementById('step0-bg-img');
         if (bgImg) {
-            const bgLabel = document.createElement('div');
-            bgLabel.className = 'sm-edit-label';
-            bgLabel.textContent = '↑ click image to change background';
-            bgImg.parentNode.insertBefore(bgLabel, bgImg.nextSibling);
-            bgImg.addEventListener('click', (e) => {
+            const bgHint = document.createElement('div');
+            bgHint.className = 'sm-click-hint';
+            bgHint.style.bottom = '18px';
+            bgHint.textContent = '✎ click to change background image';
+            bgImg.parentNode.style.position = 'relative';
+            bgImg.parentNode.appendChild(bgHint);
+            bgImg.addEventListener('click', e => {
                 e.stopPropagation();
                 const current = formConfig.bgImageUrl || bgImg.src;
-                const val = prompt('Background image URL:', current);
-                if (val !== null) {
-                    formConfig.bgImageUrl = val.trim();
-                    if (val.trim()) bgImg.src = val.trim();
-                    sendEditUpdate({ bgImageUrl: val.trim() });
-                }
+                showInlineEditor(bgImg, 'Background Image URL', current, val => {
+                    formConfig.bgImageUrl = val;
+                    if (val) bgImg.src = val;
+                    sendEditUpdate({ bgImageUrl: val });
+                }, 'https://...');
             });
         }
 
-        // Form field labels — inject contenteditable spans
+        // Wire up form field labels and section headers
         setTimeout(() => {
             makeLabelsEditable();
             makeSectionHeadersEditable();
-        }, 100);
+        }, 80);
     }
 
     function makeLabelsEditable() {
@@ -1041,38 +1109,37 @@
             if (qIdx < 0) return;
             const q = formConfig.questions[qIdx];
 
-            // Collect and remove text nodes
-            const textNodes = Array.from(labelEl.childNodes).filter(n => n.nodeType === Node.TEXT_NODE);
-            textNodes.forEach(n => n.remove());
+            // Remove bare text nodes (the label text), keep child elements (required mark, hint)
+            Array.from(labelEl.childNodes)
+                .filter(n => n.nodeType === Node.TEXT_NODE)
+                .forEach(n => n.remove());
 
-            // Create inline editable span for label text
+            // Inject contenteditable span for label text
             const span = document.createElement('span');
             span.setAttribute('data-sm-editable', '');
             span.setAttribute('contenteditable', 'true');
             span.setAttribute('spellcheck', 'false');
             span.textContent = q.label;
-            span.style.cssText = 'outline:none; display:inline; min-width:20px;';
+            span.style.cssText = 'outline:none;display:inline;min-width:20px;';
             span.addEventListener('input', () => {
-                const newLabel = span.textContent.trim();
-                formConfig.questions[qIdx].label = newLabel;
-                sendEditUpdate({ question: { index: qIdx, key: 'label', value: newLabel } });
+                formConfig.questions[qIdx].label = span.textContent.trim();
+                sendEditUpdate({ question: { index: qIdx, key: 'label', value: span.textContent.trim() } });
             });
             span.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); span.blur(); } });
             labelEl.insertBefore(span, labelEl.firstChild);
 
-            // Also make hint editable if it's a checkbox (the full text shown to applicant)
+            // Checkbox hint text (the agreement text) — make editable inline
             if (q.type === 'checkbox_single') {
-                const checkboxSpan = labelEl.closest('.form-group')?.querySelector('.custom-checkbox > span');
-                if (checkboxSpan) {
-                    checkboxSpan.setAttribute('data-sm-editable', '');
-                    checkboxSpan.setAttribute('contenteditable', 'true');
-                    checkboxSpan.setAttribute('spellcheck', 'false');
-                    checkboxSpan.addEventListener('input', () => {
-                        const newHint = checkboxSpan.textContent.trim();
-                        formConfig.questions[qIdx].hint = newHint;
-                        sendEditUpdate({ question: { index: qIdx, key: 'hint', value: newHint } });
+                const cbSpan = labelEl.closest('.form-group')?.querySelector('.custom-checkbox > span');
+                if (cbSpan) {
+                    cbSpan.setAttribute('data-sm-editable', '');
+                    cbSpan.setAttribute('contenteditable', 'true');
+                    cbSpan.setAttribute('spellcheck', 'false');
+                    cbSpan.addEventListener('input', () => {
+                        formConfig.questions[qIdx].hint = cbSpan.textContent.trim();
+                        sendEditUpdate({ question: { index: qIdx, key: 'hint', value: cbSpan.textContent.trim() } });
                     });
-                    checkboxSpan.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); checkboxSpan.blur(); } });
+                    cbSpan.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); cbSpan.blur(); } });
                 }
             }
         });
@@ -1080,18 +1147,16 @@
 
     function makeSectionHeadersEditable() {
         document.querySelectorAll('.survey-header-center h3').forEach(h3 => {
-            const labelText = h3.textContent.trim();
-            const qIdx = formConfig.questions.findIndex(q => q.type === 'section_header' && q.label === labelText);
+            const txt = h3.textContent.trim();
+            const qIdx = formConfig.questions.findIndex(q => q.type === 'section_header' && q.label === txt);
             if (qIdx < 0) return;
-
             h3.setAttribute('data-sm-editable', '');
             h3.setAttribute('contenteditable', 'true');
             h3.setAttribute('spellcheck', 'false');
             h3.style.outline = 'none';
             h3.addEventListener('input', () => {
-                const newLabel = h3.textContent.trim();
-                formConfig.questions[qIdx].label = newLabel;
-                sendEditUpdate({ question: { index: qIdx, key: 'label', value: newLabel } });
+                formConfig.questions[qIdx].label = h3.textContent.trim();
+                sendEditUpdate({ question: { index: qIdx, key: 'label', value: h3.textContent.trim() } });
             });
             h3.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); h3.blur(); } });
         });
