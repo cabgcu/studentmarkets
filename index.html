@@ -555,12 +555,17 @@
     }
 
     // --- PREVIEW MODE (embedded as iframe in vendoradmin form builder) ---
-    // Listen for preview config from parent — works in both preview and normal mode
+    let _editModeEnabled = false;
+
     window.addEventListener('message', (e) => {
         if (!e.data || e.data.type !== 'SM_PREVIEW_CONFIG' || !e.data.config) return;
         formConfig = e.data.config;
         applyHeroConfig();
         renderPublicForm();
+        if (e.data.editMode && !_editModeEnabled) {
+            _editModeEnabled = true;
+            enableEditMode();
+        }
     });
 
     // --- VENDOR CONFIRMATION FLOW ENGINE ---
@@ -959,6 +964,137 @@
                 headline.innerHTML = `<span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/50">${lastWord}</span>`;
             }
         }
+    }
+
+    function sendEditUpdate(updates) {
+        window.parent.postMessage({ type: 'SM_EDIT_UPDATE', payload: { updates } }, '*');
+    }
+
+    function enableEditMode() {
+        // Inject edit mode CSS
+        const style = document.createElement('style');
+        style.id = 'sm-edit-mode-styles';
+        style.textContent = `
+            [data-sm-editable] { cursor: text !important; transition: outline 0.15s; }
+            [data-sm-editable]:hover { outline: 2px solid rgba(59,130,246,0.55) !important; outline-offset: 3px; border-radius: 3px; }
+            [data-sm-editable]:focus { outline: 2px solid #0A84FF !important; outline-offset: 3px; border-radius: 3px; background: rgba(10,132,255,0.07) !important; }
+            #step0-bg-img { cursor: pointer !important; transition: opacity 0.2s; }
+            #step0-bg-img:hover { opacity: 0.55 !important; }
+            .control-item, select.control-item { pointer-events: none !important; opacity: 0.7; }
+            .custom-checkbox input { pointer-events: none !important; }
+            .sm-edit-label { display: block; font-size: 0.58rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(59,130,246,0.7); text-align: center; padding: 3px 0 0; }
+        `;
+        document.head.appendChild(style);
+
+        // Show edit mode indicator
+        const badge = document.createElement('div');
+        badge.style.cssText = 'position:fixed;top:12px;right:12px;z-index:9999;background:rgba(10,132,255,0.9);color:#fff;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:0.5px;backdrop-filter:blur(8px);pointer-events:none;';
+        badge.textContent = '✎ Edit Mode';
+        document.body.appendChild(badge);
+
+        // Hero title — click to edit
+        const headline = document.getElementById('step0-headline');
+        if (headline) {
+            headline.setAttribute('data-sm-editable', '');
+            headline.title = 'Click to edit title';
+            headline.addEventListener('click', () => {
+                const current = formConfig.heroTitle || headline.innerText.replace(/\n/g,' ').trim();
+                const val = prompt('Hero title (last word gets gradient style):', current);
+                if (val !== null && val.trim()) {
+                    formConfig.heroTitle = val.trim();
+                    applyHeroConfig();
+                    sendEditUpdate({ heroTitle: val.trim() });
+                }
+            });
+        }
+
+        // Background image — click to change
+        const bgImg = document.getElementById('step0-bg-img');
+        if (bgImg) {
+            const bgLabel = document.createElement('div');
+            bgLabel.className = 'sm-edit-label';
+            bgLabel.textContent = '↑ click image to change background';
+            bgImg.parentNode.insertBefore(bgLabel, bgImg.nextSibling);
+            bgImg.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const current = formConfig.bgImageUrl || bgImg.src;
+                const val = prompt('Background image URL:', current);
+                if (val !== null) {
+                    formConfig.bgImageUrl = val.trim();
+                    if (val.trim()) bgImg.src = val.trim();
+                    sendEditUpdate({ bgImageUrl: val.trim() });
+                }
+            });
+        }
+
+        // Form field labels — inject contenteditable spans
+        setTimeout(() => {
+            makeLabelsEditable();
+            makeSectionHeadersEditable();
+        }, 100);
+    }
+
+    function makeLabelsEditable() {
+        document.querySelectorAll('label.form-label[id^="lbl-form_"]').forEach(labelEl => {
+            const qid = labelEl.id.replace('lbl-form_', '');
+            const qIdx = formConfig.questions.findIndex(q => q.id === qid);
+            if (qIdx < 0) return;
+            const q = formConfig.questions[qIdx];
+
+            // Collect and remove text nodes
+            const textNodes = Array.from(labelEl.childNodes).filter(n => n.nodeType === Node.TEXT_NODE);
+            textNodes.forEach(n => n.remove());
+
+            // Create inline editable span for label text
+            const span = document.createElement('span');
+            span.setAttribute('data-sm-editable', '');
+            span.setAttribute('contenteditable', 'true');
+            span.setAttribute('spellcheck', 'false');
+            span.textContent = q.label;
+            span.style.cssText = 'outline:none; display:inline; min-width:20px;';
+            span.addEventListener('input', () => {
+                const newLabel = span.textContent.trim();
+                formConfig.questions[qIdx].label = newLabel;
+                sendEditUpdate({ question: { index: qIdx, key: 'label', value: newLabel } });
+            });
+            span.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); span.blur(); } });
+            labelEl.insertBefore(span, labelEl.firstChild);
+
+            // Also make hint editable if it's a checkbox (the full text shown to applicant)
+            if (q.type === 'checkbox_single') {
+                const checkboxSpan = labelEl.closest('.form-group')?.querySelector('.custom-checkbox > span');
+                if (checkboxSpan) {
+                    checkboxSpan.setAttribute('data-sm-editable', '');
+                    checkboxSpan.setAttribute('contenteditable', 'true');
+                    checkboxSpan.setAttribute('spellcheck', 'false');
+                    checkboxSpan.addEventListener('input', () => {
+                        const newHint = checkboxSpan.textContent.trim();
+                        formConfig.questions[qIdx].hint = newHint;
+                        sendEditUpdate({ question: { index: qIdx, key: 'hint', value: newHint } });
+                    });
+                    checkboxSpan.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); checkboxSpan.blur(); } });
+                }
+            }
+        });
+    }
+
+    function makeSectionHeadersEditable() {
+        document.querySelectorAll('.survey-header-center h3').forEach(h3 => {
+            const labelText = h3.textContent.trim();
+            const qIdx = formConfig.questions.findIndex(q => q.type === 'section_header' && q.label === labelText);
+            if (qIdx < 0) return;
+
+            h3.setAttribute('data-sm-editable', '');
+            h3.setAttribute('contenteditable', 'true');
+            h3.setAttribute('spellcheck', 'false');
+            h3.style.outline = 'none';
+            h3.addEventListener('input', () => {
+                const newLabel = h3.textContent.trim();
+                formConfig.questions[qIdx].label = newLabel;
+                sendEditUpdate({ question: { index: qIdx, key: 'label', value: newLabel } });
+            });
+            h3.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); h3.blur(); } });
+        });
     }
 
     function generateFieldHtml(q) {
