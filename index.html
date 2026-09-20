@@ -18,19 +18,17 @@
 
     <style>
         :root {
-            /* V1 Survey UI Theme Colors */
+            /* Night Glass Theme — matches the CAB Survey app (cabgcu/survey) */
             --bg-dark: #000000;
-            --glass-surface: rgba(0, 0, 0, 0.65);
-            --glass-border: rgba(255, 255, 255, 0.18);
+            --glass-surface: rgba(10, 10, 10, 0.5);
+            --glass-border: rgba(255, 255, 255, 0.10);
             --text-main: #ffffff;
             --text-muted: #d1d1d6;
-            --gradient-accent: linear-gradient(135deg, #0A84FF, #BF5AF2);
-            --gradient-fire: linear-gradient(135deg, #FF9500, #FF3B30);
-            --gradient-success: linear-gradient(135deg, #34C759, #30B0C7);
-            --radius-card: 28px;
+            --accent-required: #fb7185;
+            --radius-card: 32px;
             --radius-btn: 16px;
             --blur-bg: 2px;
-            --blur-card: 12px;
+            --blur-card: 40px;
 
             /* App Specific Layout */
             --max-width-content: 700px;
@@ -57,7 +55,7 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; border: 2px solid var(--bg-dark); }
 
-        :focus-visible { outline: 3px solid #0A84FF; outline-offset: 3px; border-radius: 6px; }
+        :focus-visible { outline: 3px solid rgba(255, 255, 255, 0.55); outline-offset: 3px; border-radius: 6px; }
 
         /* Background (no bg image — step-0 hero handles its own bg) */
         #bg-container {
@@ -66,7 +64,13 @@
         }
         #bg-overlay { display: none; }
 
-        .app-container { position: relative; max-width: 1280px; margin: 0 auto; padding: 16px 12px; min-height: 100vh; display: flex; flex-direction: column; transition: all 0.4s ease; }
+        /* Ambient glow blobs — same recipe as the survey app: something for the frosted glass to blur against */
+        .global-ambient-glow { position: fixed; border-radius: 50%; pointer-events: none; filter: blur(110px); z-index: 0; }
+        .global-ambient-glow-1 { top: -12%; left: -10%; width: 55vw; height: 55vw; max-width: 460px; max-height: 460px; background: rgba(255, 255, 255, 0.10); }
+        .global-ambient-glow-2 { bottom: -18%; right: -12%; width: 60vw; height: 60vw; max-width: 520px; max-height: 520px; background: rgba(255, 255, 255, 0.07); }
+        .global-ambient-glow-3 { top: 38%; right: 8%; width: 34vw; height: 34vw; max-width: 340px; max-height: 340px; background: rgba(255, 255, 255, 0.05); }
+
+        .app-container { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 16px 12px; min-height: 100vh; display: flex; flex-direction: column; transition: all 0.4s ease; }
         @media (min-width: 768px) { .app-container { padding: 40px 24px; } }
 
         .view { display: none; opacity: 0; transform: translateY(10px); transition: 0.3s ease; width: 100%; }
@@ -77,11 +81,15 @@
 
         /* Survey Card Styling — matches the "night glass" card treatment on cabgcu.github.io */
         .frosted {
-            background: var(--glass-surface);
-            backdrop-filter: blur(var(--blur-card));
-            -webkit-backdrop-filter: blur(var(--blur-card));
+            background: linear-gradient(155deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.015));
+            background-color: var(--glass-surface);
+            backdrop-filter: blur(var(--blur-card)) saturate(160%);
+            -webkit-backdrop-filter: blur(var(--blur-card)) saturate(160%);
             border: 1px solid var(--glass-border);
-            box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 60px rgba(255,255,255,0.08);
+            box-shadow:
+                0 50px 100px rgba(0, 0, 0, 0.65),
+                inset 0 1px 0 rgba(255, 255, 255, 0.14),
+                inset 0 0 60px rgba(255, 255, 255, 0.02);
             border-radius: var(--radius-card);
         }
 
@@ -98,20 +106,22 @@
         .form-label { display: block; margin-bottom: 12px; color: var(--text-muted); font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.4; }
         .form-hint { display: block; margin-top: 2px; margin-bottom: 10px; color: #a1a1aa; font-size: 0.8rem; line-height: 1.4; text-transform: none; font-weight: 500; letter-spacing: 0; }
 
-        .required-mark { color: #FF3B30; margin-left: 4px; font-weight: bold; }
+        .required-mark { color: var(--accent-required); margin-left: 4px; font-weight: bold; }
 
         /* V1 Survey Input Styling */
         input.control-item, select.control-item, textarea.control-item {
-            width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.3);
+            width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.14);
             color: #fff; padding: 16px 20px; border-radius: var(--radius-btn); font-family: inherit; font-size: 1rem;
             outline: none; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        .control-item::placeholder { color: rgba(255, 255, 255, 0.45); }
+
         .control-item:focus {
-            border-color: #0A84FF;
-            background: rgba(255,255,255,0.12);
-            box-shadow: 0 0 15px rgba(10, 132, 255, 0.4), 0 0 2px rgba(191, 90, 242, 0.4);
-            transform: scale(1.01);
+            border-color: rgba(255, 255, 255, 0.55);
+            background: rgba(255,255,255,0.09);
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.18);
+            transform: translateY(-1px);
         }
 
         .autofilled-masked { color: #34C759 !important; font-style: italic; font-weight: 800 !important; background: rgba(52, 199, 89, 0.05) !important; border-color: rgba(52, 199, 89, 0.3) !important; }
@@ -127,26 +137,23 @@
 
         .custom-checkbox { display: flex; align-items: flex-start; gap: 12px; cursor: pointer; margin-bottom: 8px; font-size: 0.95rem; line-height: 1.5; color: #fff; background: rgba(0,0,0,0.4); padding: 14px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); transition: 0.2s; width: 100%; font-weight: 500;}
         .custom-checkbox:hover { background: rgba(0,0,0,0.6); border-color: rgba(255, 255, 255, 0.35); }
-        .custom-checkbox input { width: 22px; height: 22px; accent-color: #0A84FF; margin-top: 2px; flex-shrink: 0; cursor: pointer; }
+        .custom-checkbox input { width: 22px; height: 22px; accent-color: #ffffff; margin-top: 2px; flex-shrink: 0; cursor: pointer; }
 
-        .conditional-section { display: none; background: rgba(255, 255, 255, 0.03); border-left: 4px solid #0A84FF; padding: 18px; border-radius: 0 12px 12px 0; margin-bottom: 20px; animation: fadeUp 0.3s ease; }
+        .conditional-section { display: none; background: rgba(255, 255, 255, 0.03); border-left: 4px solid rgba(255, 255, 255, 0.35); padding: 18px; border-radius: 0 12px 12px 0; margin-bottom: 20px; animation: fadeUp 0.3s ease; }
 
         /* V1 Button Styling */
         .btn { padding: 18px 32px; border-radius: var(--radius-btn); font-weight: 700; cursor: pointer; border: none; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 1rem; width: 100%; }
         @media (min-width: 768px) { .btn { width: auto; min-width: 250px;} }
 
-        /* Frosted glass buttons — matches the "night glass" link/button treatment on cabgcu.github.io */
+        /* Solid white CTA — matches the "night glass" primary button treatment on cabgcu.github.io */
         .btn-primary {
-            background: linear-gradient(155deg, rgba(255,255,255,0.07), rgba(255,255,255,0.015));
-            background-color: rgba(10,10,10,0.5);
-            backdrop-filter: blur(40px) saturate(160%);
-            -webkit-backdrop-filter: blur(40px) saturate(160%);
-            color: #ffffff;
-            border: 1px solid rgba(255,255,255,0.10);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.45);
+            background: #ffffff;
+            color: #000000;
+            box-shadow: 0 15px 35px rgba(255, 255, 255, 0.25);
         }
-        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); background-color: rgba(20,20,20,0.6); box-shadow: 0 20px 45px rgba(0,0,0,0.55); }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); background: #e5e5e5; box-shadow: 0 20px 45px rgba(255, 255, 255, 0.4); }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary .loader { border-color: #000; border-bottom-color: transparent; }
         .btn-ghost {
             background: linear-gradient(155deg, rgba(255,255,255,0.07), rgba(255,255,255,0.015));
             background-color: rgba(10,10,10,0.5);
@@ -165,12 +172,22 @@
             50% { transform: scale(1.05); opacity: 0.7; }
         }
 
-        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 16px 24px; border-radius: 100px; background: var(--gradient-success); font-weight: 700; z-index: 3000; display: none; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.5); color: #fff; }
+        #toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px;
+            padding: 16px 24px; border-radius: 100px; font-weight: 700; z-index: 3000; display: none; text-align: center;
+            color: #fff; font-size: 0.9rem; letter-spacing: 0.02em;
+            background: linear-gradient(155deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.015)), rgba(10, 10, 10, 0.9);
+            backdrop-filter: blur(20px) saturate(150%);
+            -webkit-backdrop-filter: blur(20px) saturate(150%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+        #toast.toast-error { border-color: rgba(251, 113, 133, 0.5); }
 
         footer { margin-top:auto; padding:60px 0 40px; text-align:center; color: rgba(255, 255, 255, 0.4); font-size: 0.75rem; letter-spacing: 0.05em; line-height: 1.6; }
 
         .center-btn-wrapper { display: flex; justify-content: center; width: 100%; margin-top: 20px; }
-        .success-icon { width: 80px; height: 80px; background: var(--gradient-success); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 40px; color: white; box-shadow: 0 10px 20px rgba(52, 199, 89, 0.3); }
+        .success-icon { width: 80px; height: 80px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 40px; color: white; box-shadow: 0 0 40px rgba(255, 255, 255, 0.2); }
         .survey-header-center { text-align: center; margin-bottom: 30px; }
 
         .autofill-indicator { font-size: 0.8rem; color: #34C759; margin-top: 8px; font-weight: bold; background: rgba(52, 199, 89, 0.1); padding: 8px 12px; border-radius: 8px; display: inline-block; }
@@ -186,16 +203,23 @@
         #marketSelectionContainer { width: 100%; display: flex; flex-direction: column; gap: 12px; margin-bottom: 10px; }
         .market-option { background: rgba(0,0,0,0.4); border: 1px solid rgba(255, 255, 255, 0.25); padding: 16px; border-radius: var(--radius-btn); display: flex; align-items: flex-start; gap: 12px; cursor: pointer; transition: 0.2s; }
         .market-option:hover { background: rgba(0,0,0,0.6); border-color: rgba(255,255,255,0.4); }
-        .market-option.selected { border-color: #0A84FF; background: rgba(10, 132, 255, 0.1); box-shadow: 0 0 15px rgba(10, 132, 255, 0.2); transform: scale(1.01); }
-        .market-option input { width: 18px; height: 18px; accent-color: #0A84FF; margin-top: 2px; flex-shrink: 0; }
+        .market-option.selected { border-color: rgba(255, 255, 255, 0.55); background: rgba(255, 255, 255, 0.08); box-shadow: 0 0 20px rgba(255, 255, 255, 0.15); transform: scale(1.01); }
+        .market-option input { width: 18px; height: 18px; accent-color: #ffffff; margin-top: 2px; flex-shrink: 0; }
         .market-name { font-weight: 800; color: #fff; font-size: 1.05rem; display: block; margin-bottom: 4px; }
         .market-meta { font-size: 0.85rem; color: var(--text-muted); display: block; line-height: 1.5; font-weight: 500;}
 
         /* Modals & Popups */
         .modal { position: fixed; inset: 0; z-index: 1000; display: none; justify-content: center; align-items: center; padding: 16px; }
         .modal.show { display: flex; }
-        .modal-bg { position: absolute; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); }
-        .modal-content { position: relative; width: 100%; max-width: 400px; background: #000; border-radius: 32px; padding: 32px; border: 1px solid var(--glass-border); text-align: center; }
+        .modal-bg { position: absolute; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+        .modal-content {
+            position: relative; width: 100%; max-width: 400px; border-radius: 32px; padding: 32px; text-align: center;
+            background: linear-gradient(155deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.015)), rgba(10, 10, 10, 0.9);
+            backdrop-filter: blur(40px) saturate(160%);
+            -webkit-backdrop-filter: blur(40px) saturate(160%);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 50px 100px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+        }
 
         /* Wizard Logic */
         .form-step { display: none; opacity: 0; transform: translateY(10px); transition: 0.3s ease; }
@@ -241,8 +265,8 @@
         .status-name { font-weight: 800; font-size: 1.1rem; color: #fff; line-height: 1.2; text-align: left; }
         .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 100px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
         .status-meta { font-size: 0.8rem; color: var(--text-muted); display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; margin-bottom: 16px; text-align: left;}
-        .resend-btn { width: 100%; background: rgba(10, 132, 255, 0.1); border: 1px solid rgba(10, 132, 255, 0.3); color: #0A84FF; padding: 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .resend-btn:hover { background: rgba(10, 132, 255, 0.2); border-color: #0A84FF; color: #fff; }
+        .resend-btn { width: 100%; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; padding: 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .resend-btn:hover { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.4); }
 
         /* Wizard Logic */
         .wizard-nav { display: flex; justify-content: center; gap: 15px; margin-top: 30px; width: 100%; }
@@ -252,13 +276,17 @@
         #wizardProgress { text-align: center; margin-bottom: 20px; color: var(--text-muted); font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; display: none; }
         .progress-dots { display: flex; justify-content: center; gap: 6px; margin-top: 8px; }
         .progress-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2); transition: 0.3s; }
-        .progress-dot.active { background: #0A84FF; transform: scale(1.2); }
+        .progress-dot.active { background: #ffffff; transform: scale(1.2); }
     </style>
 </head>
 <body>
 
 <div id="bg-container"></div>
 <div id="bg-overlay"></div>
+
+<div class="global-ambient-glow global-ambient-glow-1"></div>
+<div class="global-ambient-glow global-ambient-glow-2"></div>
+<div class="global-ambient-glow global-ambient-glow-3"></div>
 
 <div class="app-container" id="mainAppContainer">
 
@@ -286,17 +314,17 @@
                         <div id="appDescContainer" style="color: var(--text-muted); margin: 12px auto; line-height: 1.5; font-size: 0.9rem; max-width: 95%;">
                             <span id="appDesc">Loading available markets...</span>
                         </div>
-                        <span style="font-size: 0.75rem; color: #FF3B30; font-weight: 700; text-transform: uppercase;">* Indicates required question</span>
+                        <span style="font-size: 0.75rem; color: #fb7185; font-weight: 700; text-transform: uppercase;">* Indicates required question</span>
                     </div>
 
                     <fieldset class="form-group full-width" style="margin-bottom:15px; border:none; padding:0; margin:0;">
                         <legend class="form-label" id="lbl-market-selection" style="width:100%;">Which Market are you applying for?<span class="required-mark">*</span></legend>
                         <div id="marketSelectionContainer"></div>
 
-                        <div id="lateAgreementContainer" style="display:none; background: rgba(255, 59, 48, 0.05); border: 1px solid rgba(255, 59, 48, 0.3); padding: 18px; border-radius: 16px; margin-top: 20px; animation: fadeUp 0.3s ease;">
-                            <label class="custom-checkbox" style="border-color: rgba(255, 59, 48, 0.4); background: rgba(0,0,0,0.5); margin-bottom: 0;">
+                        <div id="lateAgreementContainer" style="display:none; background: rgba(251, 113, 133, 0.05); border: 1px solid rgba(251, 113, 133, 0.3); padding: 18px; border-radius: 16px; margin-top: 20px; animation: fadeUp 0.3s ease;">
+                            <label class="custom-checkbox" style="border-color: rgba(251, 113, 133, 0.4); background: rgba(0,0,0,0.5); margin-bottom: 0;">
                                 <input type="checkbox" id="lateAgreementCheck">
-                                <span style="color: #FF3B30; font-weight: 700; font-size: 0.85rem;">I acknowledge that I am applying PAST the official deadline. I understand that submitting this application counts as a Late Strike.</span>
+                                <span style="color: #fb7185; font-weight: 700; font-size: 0.85rem;">I acknowledge that I am applying PAST the official deadline. I understand that submitting this application counts as a Late Strike.</span>
                             </label>
                         </div>
                     </fieldset>
@@ -423,7 +451,7 @@
                             id="step0-next-btn"
                             onclick="nextPrev(1)"
                             disabled
-                            class="btn-primary group relative w-full sm:w-auto px-8 py-4 text-white rounded-full font-semibold text-base overflow-hidden transition-all duration-300 active:scale-[0.98] flex justify-center flex-shrink-0 whitespace-nowrap" style="min-width:auto;">
+                            class="btn-primary group relative w-full sm:w-auto px-8 py-4 rounded-full font-semibold text-base overflow-hidden transition-all duration-300 active:scale-[0.98] flex justify-center flex-shrink-0 whitespace-nowrap" style="min-width:auto;">
                             <span class="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
                                 Start Application
                                 <svg class="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
@@ -678,8 +706,8 @@
             const errDiv = document.getElementById('confirmation-loading-screen');
             if (errDiv) {
                 errDiv.innerHTML = `
-                    <div style="font-size: 4rem; color: #FF3B30; margin-bottom: 20px;">✕</div>
-                    <h2 style="color:#FF3B30; font-weight:800; margin-bottom:10px;">System Error</h2>
+                    <div style="font-size: 4rem; color: #fb7185; margin-bottom: 20px;">✕</div>
+                    <h2 style="color:#fb7185; font-weight:800; margin-bottom:10px;">System Error</h2>
                     <p style="color:#a1a1aa; text-align:center; max-width: 400px;">${err.message || 'We could not process your confirmation automatically. Please reply directly to the email to confirm your attendance.'}</p>
                 `;
             }
@@ -725,8 +753,8 @@
             const errDiv = document.getElementById('confirmation-loading-screen');
             if (errDiv) {
                 errDiv.innerHTML = `
-                    <div style="font-size: 4rem; color: #FF3B30; margin-bottom: 20px;">✕</div>
-                    <h2 style="color:#FF3B30; font-weight:800; margin-bottom:10px;">System Error</h2>
+                    <div style="font-size: 4rem; color: #fb7185; margin-bottom: 20px;">✕</div>
+                    <h2 style="color:#fb7185; font-weight:800; margin-bottom:10px;">System Error</h2>
                     <p style="color:#a1a1aa; text-align:center; max-width: 400px;">${err.message || 'We could not process your power status. Please reply directly to the email to update us.'}</p>
                 `;
             }
@@ -822,7 +850,7 @@
     };
 
     function updateClosedUI(msg) {
-        document.getElementById('marketSelectionContainer').innerHTML = '<div style="color:#FF3B30">Applications are currently closed.</div>';
+        document.getElementById('marketSelectionContainer').innerHTML = '<div style="color:#fb7185">Applications are currently closed.</div>';
         document.getElementById('nextBtn').disabled = true;
         document.getElementById('appDesc').innerHTML = msg;
 
@@ -919,10 +947,10 @@
                                 <strong>Date of Market:</strong> ${formattedDate}<br>
                                 <strong>Time:</strong> ${e.market_time || '6:30-9:30pm'}<br>
                                 <strong>Location:</strong> ${e.location}<br>
-                                <span style="color: ${isLate ? '#FF3B30' : 'var(--text-muted)'}; font-size: 0.75rem; display: inline-block; margin-top: 4px;">
+                                <span style="color: ${isLate ? '#fb7185' : 'var(--text-muted)'}; font-size: 0.75rem; display: inline-block; margin-top: 4px;">
                                     ${isLate ? '<strong>🚨 PAST DEADLINE</strong>' : `This application closes on ${formattedClose}`}
                                 </span>
-                                ${isLate ? `<span style="color: #FF3B30; font-size: 0.75rem; font-weight: bold; display: block; margin-top: 4px; line-height: 1.3;">Submitting now will result in 1 Late Strike. 3 Strikes = Banned.</span>` : ''}
+                                ${isLate ? `<span style="color: #fb7185; font-size: 0.75rem; font-weight: bold; display: block; margin-top: 4px; line-height: 1.3;">Submitting now will result in 1 Late Strike. 3 Strikes = Banned.</span>` : ''}
                             </span>
                         </div>
                     </label>`;
@@ -1592,7 +1620,7 @@
 
                 let color = '#FF9500'; let icon = '⏳';
                 if (a.displayStatus === 'Approved') { color = '#34C759'; icon = '✅'; }
-                if (a.displayStatus === 'Denied') { color = '#FF3B30'; icon = '❌'; }
+                if (a.displayStatus === 'Denied') { color = '#fb7185'; icon = '❌'; }
 
                 const canResend = (a.email_sent && a.email_sent !== 'No');
 
@@ -1696,7 +1724,7 @@
                     document.getElementById('formFoodLicenseLinkHidden').value = v.food_license_link;
                     document.getElementById('existingLicenseLink').innerHTML = `<div style="color:#34C759; font-size:0.85rem; margin:10px 0; font-weight:800; background:rgba(52,199,89,0.1); padding:10px; border-radius:10px; border:1px solid rgba(52,199,89,0.2);">✅ Verified license found on file.</div>`;
                 } else if (v._food_license_needs_resubmit) {
-                    document.getElementById('existingLicenseLink').innerHTML = `<div style="color:#FF3B30; font-size:0.85rem; margin:10px 0; font-weight:800; background:rgba(255,59,48,0.1); padding:10px; border-radius:10px; border:1px solid rgba(255,59,48,0.2);">🚨 Your previous food license could not be verified. Please re-upload it below.</div>`;
+                    document.getElementById('existingLicenseLink').innerHTML = `<div style="color:#fb7185; font-size:0.85rem; margin:10px 0; font-weight:800; background:rgba(251,113,133,0.1); padding:10px; border-radius:10px; border:1px solid rgba(251,113,133,0.2);">🚨 Your previous food license could not be verified. Please re-upload it below.</div>`;
                 }
                 toggleFoodLicense();
                 // Trigger all conditional children based on autofilled values
@@ -1808,7 +1836,7 @@
             generateSummary(selectedIds, basePayload);
 
             switchView('success');
-            if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#0A84FF', '#BF5AF2'] });
+            if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#ffffff', '#e5e5e5', '#9ca3af'] });
         } catch(e) {
             console.error(e);
             showToast("Submission failed: " + (e.message || 'Unknown error'), true);
@@ -1821,7 +1849,7 @@
 
     function toggleFoodLicense() { let s = document.getElementById('foodLicenseUploadSection'); if(s) s.style.display = document.getElementById('form_food_license').value==='Yes'?'block':'none'; }
     function switchView(v) { document.querySelectorAll('.view').forEach(e => e.classList.remove('active')); document.getElementById(v + 'View').classList.add('active'); window.scrollTo(0,0); }
-    function showToast(m, e) { const t = document.getElementById('toast'); t.innerText = m; t.style.background = e ? 'var(--gradient-fire)' : 'var(--gradient-success)'; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 4000); }
+    function showToast(m, e) { const t = document.getElementById('toast'); t.innerText = m; t.classList.toggle('toast-error', !!e); t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 4000); }
 
     async function compressImage(file) {
         const options = {
