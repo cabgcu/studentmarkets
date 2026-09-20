@@ -885,7 +885,10 @@
 
                 const isPastOpen = !e.app_open || new Date(e.app_open) <= now;
                 const isBeforeClose = !e.app_close || new Date(e.app_close) >= now;
-                return isPastOpen && isBeforeClose;
+                // Guard against stale records with no app_close date set: never treat a
+                // market whose event date has already passed as still open for applications.
+                const eventNotPast = !e.market_date || new Date(e.market_date + 'T23:59:59') >= now;
+                return isPastOpen && isBeforeClose && eventNotPast;
             });
 
             if (openMarkets.length === 0) {
