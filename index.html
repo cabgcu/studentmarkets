@@ -42,7 +42,7 @@
             margin: 0;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
             color: var(--text-main);
-            background-color: #0b0b0e;
+            background-color: var(--bg-dark);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -62,7 +62,7 @@
         /* Background (no bg image — step-0 hero handles its own bg) */
         #bg-container {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; overflow: hidden;
-            background-color: #0b0b0e;
+            background-color: var(--bg-dark);
         }
         #bg-overlay { display: none; }
 
@@ -75,12 +75,14 @@
         .hero-banner { width: 100%; max-width: var(--max-width-content); margin: 0 auto 24px; border-radius: var(--radius-card); overflow: hidden; border: 1px solid var(--glass-border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); background: #111; line-height: 0; }
         .hero-banner img { width: 100%; height: auto; display: block; }
 
-        /* Survey Card Styling */
+        /* Survey Card Styling — matches the "night glass" card treatment on cabgcu.github.io */
         .frosted {
-            background: #151518;
-            border: 1px solid rgba(255,255,255,0.05);
-            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-            border-radius: 16px;
+            background: var(--glass-surface);
+            backdrop-filter: blur(var(--blur-card));
+            -webkit-backdrop-filter: blur(var(--blur-card));
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 60px rgba(255,255,255,0.08);
+            border-radius: var(--radius-card);
         }
 
         .survey-card { width: 100%; max-width: var(--max-width-content); margin: 0 auto 30px; padding: 24px; }
@@ -100,7 +102,7 @@
 
         /* V1 Survey Input Styling */
         input.control-item, select.control-item, textarea.control-item {
-            width: 100%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+            width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.3);
             color: #fff; padding: 16px 20px; border-radius: var(--radius-btn); font-family: inherit; font-size: 1rem;
             outline: none; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -123,8 +125,8 @@
 
         textarea.control-item { min-height: 120px; resize: vertical; }
 
-        .custom-checkbox { display: flex; align-items: flex-start; gap: 12px; cursor: pointer; margin-bottom: 8px; font-size: 0.95rem; line-height: 1.5; color: #fff; background: rgba(255,255,255,0.04); padding: 14px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08); transition: 0.2s; width: 100%; font-weight: 500;}
-        .custom-checkbox:hover { background: rgba(255,255,255,0.08); border-color: rgba(255, 255, 255, 0.15); }
+        .custom-checkbox { display: flex; align-items: flex-start; gap: 12px; cursor: pointer; margin-bottom: 8px; font-size: 0.95rem; line-height: 1.5; color: #fff; background: rgba(0,0,0,0.4); padding: 14px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); transition: 0.2s; width: 100%; font-weight: 500;}
+        .custom-checkbox:hover { background: rgba(0,0,0,0.6); border-color: rgba(255, 255, 255, 0.35); }
         .custom-checkbox input { width: 22px; height: 22px; accent-color: #0A84FF; margin-top: 2px; flex-shrink: 0; cursor: pointer; }
 
         .conditional-section { display: none; background: rgba(255, 255, 255, 0.03); border-left: 4px solid #0A84FF; padding: 18px; border-radius: 0 12px 12px 0; margin-bottom: 20px; animation: fadeUp 0.3s ease; }
@@ -136,8 +138,14 @@
         .btn-primary { background: var(--gradient-accent); color: white; box-shadow: 0 10px 20px rgba(10, 132, 255, 0.2); }
         .btn-primary:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(10, 132, 255, 0.4); }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); min-width: auto;}
-        .btn-ghost:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .btn-ghost {
+            background: linear-gradient(155deg, rgba(255,255,255,0.07), rgba(255,255,255,0.015));
+            background-color: rgba(10,10,10,0.5);
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
+            border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); min-width: auto;
+        }
+        .btn-ghost:hover { background-color: rgba(20,20,20,0.6); border-color: rgba(255,255,255,0.3); color: #fff; }
 
         .loader { display: none; width: 18px; height: 18px; border: 2px solid #fff; border-bottom-color: transparent; border-radius: 50%; animation: rotation 1s linear infinite; margin-left: 10px; }
 
@@ -167,8 +175,8 @@
         }
 
         #marketSelectionContainer { width: 100%; display: flex; flex-direction: column; gap: 12px; margin-bottom: 10px; }
-        .market-option { background: rgba(255,255,255,0.04); border: 1px solid rgba(255, 255, 255, 0.15); padding: 16px; border-radius: var(--radius-btn); display: flex; align-items: flex-start; gap: 12px; cursor: pointer; transition: 0.2s; }
-        .market-option:hover { background: rgba(255,255,255,0.08); }
+        .market-option { background: rgba(0,0,0,0.4); border: 1px solid rgba(255, 255, 255, 0.25); padding: 16px; border-radius: var(--radius-btn); display: flex; align-items: flex-start; gap: 12px; cursor: pointer; transition: 0.2s; }
+        .market-option:hover { background: rgba(0,0,0,0.6); border-color: rgba(255,255,255,0.4); }
         .market-option.selected { border-color: #0A84FF; background: rgba(10, 132, 255, 0.1); box-shadow: 0 0 15px rgba(10, 132, 255, 0.2); transform: scale(1.01); }
         .market-option input { width: 18px; height: 18px; accent-color: #0A84FF; margin-top: 2px; flex-shrink: 0; }
         .market-name { font-weight: 800; color: #fff; font-size: 1.05rem; display: block; margin-bottom: 4px; }
@@ -219,7 +227,7 @@
 
         .arena-tag { display: none; }
 
-        .status-market-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 20px; margin-bottom: 16px; transition: all 0.3s ease; }
+        .status-market-card { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 20px; margin-bottom: 16px; transition: all 0.3s ease; }
         .status-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
         .status-name { font-weight: 800; font-size: 1.1rem; color: #fff; line-height: 1.2; text-align: left; }
         .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 100px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
@@ -339,7 +347,8 @@
             id="step0-bg-img"
             src="https://i.imgur.com/65f9UL5.jpeg"
             alt="Night Market"
-            class="w-full h-full object-cover object-center opacity-75 scale-105"
+            class="w-full h-full object-cover object-center scale-105"
+            style="opacity:0; transition: opacity 0.5s ease;"
         />
         <div class="absolute inset-0 bg-gradient-to-r from-[#050505]/90 via-[#050505]/50 to-transparent"></div>
         <div class="absolute inset-0 bg-gradient-to-t from-[#050505]/80 via-transparent to-[#050505]/30"></div>
@@ -753,6 +762,13 @@
 
     let formConfig = { headerUrl: "https://lh3.googleusercontent.com/d/177iu9igWGiUkD8vdJhZn80PXgLa6hM3c", bgImageUrl: null, heroTitle: null, questions: [], forceStatus: 'auto', eventTitle: null, eventDesc: null };
 
+    // Safety net: reveal the hero background no matter what, in case config loading
+    // stalls or fails silently somewhere upstream — better a plain default than a black screen.
+    setTimeout(() => {
+        const bgImg = document.getElementById('step0-bg-img');
+        if (bgImg) bgImg.style.opacity = '0.75';
+    }, 2500);
+
     window.onload = async () => {
         if (window !== window.top) return; // Preview mode: config arrives via postMessage
         await loadConfig();
@@ -862,9 +878,13 @@
                     const singleMarket = openMarkets[0];
                     const specificConfig = marketConfigV3[String(singleMarket.id)] || {};
 
-                    document.getElementById('appTitle').innerHTML = specificConfig.title || singleMarket.name || formConfig.eventTitle || "Vendor Application";
+                    // Note: formConfig.eventTitle/eventDesc are the GLOBAL "shown when multiple
+                    // markets are open at once" fields from the vendor admin form builder — they must
+                    // NOT be used here, or a single open market can end up displaying leftover copy
+                    // written for a previous multi-market rotation instead of its own info.
+                    document.getElementById('appTitle').innerHTML = specificConfig.title || singleMarket.name || "Vendor Application";
 
-                    let descHtml = specificConfig.description || singleMarket.description || formConfig.eventDesc || "";
+                    let descHtml = specificConfig.description || singleMarket.description || "";
                     if (descHtml) {
                         document.getElementById('appDesc').innerHTML = descHtml;
                         document.getElementById('appDescContainer').style.display = 'block';
@@ -944,14 +964,18 @@
         } catch (e) {
             console.error("Failed to load config:", e);
             formConfig = { headerUrl: "https://lh3.googleusercontent.com/d/177iu9igWGiUkD8vdJhZn80PXgLa6hM3c", questions: JSON.parse(JSON.stringify(defaultQuestions)), forceStatus: 'auto' };
+            applyHeroConfig();
             renderPublicForm();
         }
     }
 
     function applyHeroConfig() {
         const bgImg = document.getElementById('step0-bg-img');
-        if (bgImg && formConfig.bgImageUrl) {
-            bgImg.src = formConfig.bgImageUrl;
+        if (bgImg) {
+            if (formConfig.bgImageUrl) bgImg.src = formConfig.bgImageUrl;
+            // Reveal only once the real background (or confirmed default) is in place,
+            // so visitors never see the hardcoded placeholder flash before the configured wallpaper loads.
+            bgImg.style.opacity = '0.75';
         }
         const headline = document.getElementById('step0-headline');
         if (headline && formConfig.heroTitle) {
