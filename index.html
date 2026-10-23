@@ -1524,7 +1524,8 @@
                     }
                 }
 
-                if (q && q.type === 'email' && val !== "") {
+                // '__ON_FILE__' = contact info kept on the server for a returning vendor; nothing to validate here.
+                if (q && q.type === 'email' && val !== "" && val !== '__ON_FILE__') {
                     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                     if (!emailRegex.test(val)) {
                         showToast(`Please enter a valid email format.`, true);
@@ -1575,7 +1576,7 @@
             </div>
             <div style="margin-bottom: 24px; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
                 <span style="display:block; margin-bottom:6px; color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">Applicant</span>
-                <span style="display:block; font-size: 1.3rem; font-weight: 800; color: #fff;">${payload.first_name} ${payload.last_name}</span>
+                <span style="display:block; font-size: 1.3rem; font-weight: 800; color: #fff;">${payload.first_name === '__ON_FILE__' ? 'Information on File' : `${payload.first_name} ${payload.last_name}`}</span>
             </div>
             <div style="background: rgba(52, 199, 89, 0.1); padding: 20px; border-radius: 20px; border: 1px solid rgba(52, 199, 89, 0.2);">
                 <span style="display:block; margin-bottom:6px; color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">Application Status</span>
