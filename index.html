@@ -1241,6 +1241,14 @@
         });
     }
 
+    // File-upload questions: which files each "Accepts" setting from the form builder allows.
+    const FILE_UPLOAD_TYPES = {
+        images: 'image/*',
+        images_pdf: 'image/*,.pdf,application/pdf',
+        documents: 'image/*,.pdf,application/pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    };
+    const FILE_UPLOAD_MAX_MB = 10;
+
     function generateFieldHtml(q) {
         let inputHtml = '';
         let common = `id="form_${q.id}" class="control-item"`;
@@ -1249,6 +1257,9 @@
             const opts = (q.options || '').split(',').map(o => `<option value="${o.trim()}">${o.trim()}</option>`).join('');
             let trigger = q.id==='food_license' ? 'onchange="toggleFoodLicense();toggleConditionalChildren(this)"' : 'onchange="toggleConditionalChildren(this)"';
             inputHtml = `<select ${common} ${trigger}><option value="">Select...</option>${opts}</select>`;
+        } else if (q.type === 'file') {
+            const accept = FILE_UPLOAD_TYPES[q.accept] || FILE_UPLOAD_TYPES.images;
+            inputHtml = `<input type="file" ${common} accept="${accept}" />`;
         } else if (q.type === 'checkbox_single') {
             inputHtml = `<label class="custom-checkbox"><input type="checkbox" id="form_${q.id}" onchange="toggleConditionalChildren(this)"><span>${q.hint || q.label}</span></label>`;
         } else {
@@ -1524,6 +1535,23 @@
                     }
                 }
 
+                if (q && q.type === 'file' && input.files && input.files[0]) {
+                    const f = input.files[0];
+                    if (f.size > FILE_UPLOAD_MAX_MB * 1024 * 1024) {
+                        showToast(`"${f.name}" is too large. Files must be under ${FILE_UPLOAD_MAX_MB} MB.`, true);
+                        return false;
+                    }
+                    const isImage = (f.type || '').startsWith('image/') || /\.(jpe?g|png|gif|webp|heic|heif)$/i.test(f.name);
+                    const isPdf = f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
+                    const isDoc = /\.(docx?)$/i.test(f.name);
+                    const accept = q.accept || 'images';
+                    const ok = isImage || (isPdf && accept !== 'images') || (isDoc && accept === 'documents');
+                    if (!ok) {
+                        showToast(`"${f.name}" isn't an allowed file type for: ${q.label}`, true);
+                        return false;
+                    }
+                }
+
                 // '__ON_FILE__' = contact info kept on the server for a returning vendor; nothing to validate here.
                 if (q && q.type === 'email' && val !== "" && val !== '__ON_FILE__') {
                     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -1698,6 +1726,8 @@
                     if(el && q.id !== 'additional_comments' && q.id !== 'student_id') {
                         // Check autofill flag - skip if autofill is disabled
                         if (q.autofill === false) return;
+                        // File inputs can't be prefilled; vendors re-upload each time.
+                        if (q.type === 'file') return;
 
                         // Special handling for food_license: only autofill if license link exists
                         if (q.id === 'food_license') {
@@ -1798,7 +1828,7 @@
             const el = document.getElementById('form_'+q.id);
             if(!el) continue;
 
-            let val = q.type==='checkbox_single' ? (el.checked?'Yes':'No') : el.value.trim();
+            let val = q.type==='checkbox_single' ? (el.checked?'Yes':'No') : q.type==='file' ? '' : el.value.trim();
 
             if (el.dataset && el.dataset.autofilled && val === 'Information on File') {
                 val = el.dataset.autofilled;
@@ -1862,6 +1892,24 @@
                 } else {
                     basePayload.food_license_link = existing;
                 }
+            }
+
+            // Upload files for any file-upload questions and store their links as the answer.
+            for (const q of formConfig.questions) {
+                if (q.type !== 'file') continue;
+                const el = document.getElementById('form_' + q.id);
+                const section = el?.closest('.conditional-section');
+                const hidden = section && section.style.display === 'none';
+                let file = !hidden && el?.files?.[0];
+                if (!file) continue;
+                submitBtnText.innerText = `Uploading ${q.label.length > 30 ? 'File' : q.label}...`;
+                if ((file.type || '').startsWith('image/')) file = await compressImage(file);
+                const uploadResult = await apiCall('SM_UPLOAD_FILE', { file, fileName: file.name, questionId: q.id });
+                if (dbColumns.has(q.id)) basePayload[q.id] = uploadResult.url;
+                else customAnswers[q.id] = uploadResult.url;
+            }
+            if (Object.keys(customAnswers).length > 0) {
+                basePayload.custom_answers = JSON.stringify(customAnswers);
             }
 
             submitBtnText.innerText = "Saving Application...";
